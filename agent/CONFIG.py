@@ -1,0 +1,5 @@
+APP_NAME = "agente_demo"
+USER_ID = "usuario"
+SESSION_ID = "sesion_demo"
+QUESTION = "hola amigazo, cuentame un chiste corto y divertido en español, por favor."
+MODEL = "openai/deepseek-v4.1-flash:free"
