@@ -1,22 +1,12 @@
-"""Ejecuta una pregunta fija con un modelo compatible con LiteLLM."""
 
-import asyncio
-import os
-from pathlib import Path
-import subprocess
 from typing import AsyncGenerator
 
-from dotenv import load_dotenv
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
-import agent.CONFIG as CONFIG
-
-project_root = Path(__file__).resolve().parent.parent
-load_dotenv(project_root / ".env")
-
+import CONFIG
 
 class Agent:
     def __init__(self, name: str, instruction: str):
@@ -73,24 +63,3 @@ class Agent:
 
     def __str__(self) -> str:
         return f"Agent(name={self.name}, model={self.model}, instruction={self.instruction})"
-
-
-
-async def main() -> None:
-
-    agent = await Agent(
-        name="agente_preguntas",
-        instruction="Responde de forma clara, breve y en español.",
-    ).initialize()
-
-    response = await Agent.ask(CONFIG.QUESTION, agent)
-    if response:
-        mascot = project_root / "mostrar-mascota.sh"
-        subprocess.Popen(
-                    [str(mascot), "--mensaje", response],
-                    cwd=project_root,
-                )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
