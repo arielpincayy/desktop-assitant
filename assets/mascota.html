@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+    body { font-family: system-ui, sans-serif; }
+    .pet {
+      position: absolute; right: 10px; bottom: 4px;
+      width: fit-content; max-width: calc(100% - 20px); max-height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      opacity: 0; transform: translate(22px, 26px) scale(.82);
+    }
+    .bubble {
+      position: relative; width: fit-content; max-width: 100%;
+      max-height: calc(100vh - 126px); overflow-x: hidden; overflow-y: auto;
+      margin-bottom: 12px; padding: 11px 17px;
+      border: 1px solid rgba(255,255,255,.78); border-radius: 18px;
+      background: rgba(255,255,255,.96); color: #18202b;
+      white-space: pre-line; overflow-wrap: anywhere;
+      font-size: 18px; font-weight: 650; letter-spacing: -.2px; text-align: center;
+      box-shadow: 0 8px 26px rgba(16,24,40,.2);
+    }
+    .bubble::after {
+      content: ""; position: absolute; bottom: -7px; left: calc(50% - 7px);
+      width: 13px; height: 13px; background: #fff; transform: rotate(45deg);
+      border-right: 1px solid rgba(255,255,255,.78); border-bottom: 1px solid rgba(255,255,255,.78);
+    }
+    .character {
+      width: 88px; height: 104px; object-fit: contain;
+      filter: drop-shadow(0 8px 8px rgba(0,0,0,.18));
+      transform-origin: center bottom;
+    }
+    .pet.show { animation: enter .2s cubic-bezier(.2,.85,.25,1.2) forwards; }
+    .pet.show .character { animation: hop .62s .05s ease-in-out both; }
+    .pet.hide { animation: leave .65s ease-in forwards; }
+    @keyframes enter { to { opacity: 1; transform: translate(0,0) scale(1); } }
+    @keyframes hop { 0%,100% { transform: translateY(0) rotate(0); } 42% { transform: translateY(-19px) rotate(-5deg); } 72% { transform: translateY(0) rotate(3deg); } }
+    @keyframes leave { to { opacity: 0; transform: translate(22px,18px) scale(.88); } }
+    @media (prefers-reduced-motion: reduce) {
+      .pet.show, .pet.show .character, .pet.hide { animation-duration: .01ms; }
+    }
+  </style>
+</head>
+<body>
+  <main class="pet" id="pet" aria-label="Mascota virtual">
+    <div class="bubble" id="message">¡Hola! 👋</div>
+    <img class="character" src="fantasmita.svg" alt="" aria-hidden="true">
+  </main>
+  <script>
+    const pet = document.getElementById('pet');
+    const message = new URLSearchParams(window.location.search).get('mensaje');
+    if (message !== null) document.getElementById('message').textContent = message;
+    let boundsFrame = 0;
+    const reportPetBounds = () => {
+      cancelAnimationFrame(boundsFrame);
+      boundsFrame = requestAnimationFrame(() => {
+        const rect = pet.getBoundingClientRect();
+        const buttonSize = 30;
+        const x = Math.max(4, Math.min(window.innerWidth - buttonSize - 4, rect.right - buttonSize));
+        const y = Math.max(4, rect.top - 4);
+        window.webkit.messageHandlers.petBounds.postMessage(`${Math.round(x)},${Math.round(y)}`);
+      });
+    };
+    new ResizeObserver(reportPetBounds).observe(pet);
+    window.addEventListener('resize', reportPetBounds);
+    pet.addEventListener('animationend', reportPetBounds);
+    requestAnimationFrame(() => pet.classList.add('show'));
+  </script>
+</body>
+</html>

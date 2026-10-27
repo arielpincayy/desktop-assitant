@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 142" role="img" aria-labelledby="title">
+  <title id="title">Fantasmita azul</title>
+  <defs>
+    <linearGradient id="body" x1=".18" y1=".08" x2=".8" y2=".96">
+      <stop offset="0" stop-color="#78c8ff"/>
+      <stop offset=".52" stop-color="#399cf2"/>
+      <stop offset="1" stop-color="#2474dc"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Silueta de sábana: cabeza redonda y borde inferior ondulado. -->
+  <path d="M60 7
+    C35 7 19 26 17 52
+    L14 91
+    C13 100 8 107 8 114
+    C8 123 17 127 25 123
+    C31 120 34 116 39 119
+    C45 123 48 132 56 132
+    C64 132 67 123 74 120
+    C82 116 88 124 96 123
+    C106 122 112 116 111 108
+    C110 101 104 96 103 86
+    L101 51
+    C99 25 84 7 60 7Z"
+    fill="url(#body)" stroke="#195fc2" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Luz suave en el lado izquierdo para dar volumen sin perder el trazo simple. -->
+  <path d="M31 40 C35 24 47 16 60 16 C46 20 39 33 37 51 L34 91
+    C33 101 27 109 22 113 C21 116 23 118 27 116 C32 113 36 111 41 114
+    C37 107 35 100 36 91 L38 53 C38 48 35 43 31 40Z"
+    fill="url(#shine)" opacity=".78"/>
+
+  <!-- Ojos como los del dibujo: dos trazos ovalados oscuros. -->
+  <ellipse cx="43" cy="65" rx="5.2" ry="11" transform="rotate(-7 43 65)" fill="#123d78"/>
+  <ellipse cx="76" cy="65" rx="5.2" ry="11" transform="rotate(7 76 65)" fill="#123d78"/>
+  <ellipse cx="41.5" cy="61.5" rx="1.5" ry="3" transform="rotate(-7 41.5 61.5)" fill="#fff" opacity=".75"/>
+  <ellipse cx="74.5" cy="61.5" rx="1.5" ry="3" transform="rotate(7 74.5 61.5)" fill="#fff" opacity=".75"/>
+</svg>
