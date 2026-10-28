@@ -1,0 +1,5 @@
+# Dependencias Python del agente. GTK, WebKitGTK y PyGObject se instalan
+# mediante los paquetes del sistema descritos en README.md.
+google-adk
+litellm
+python-dotenv

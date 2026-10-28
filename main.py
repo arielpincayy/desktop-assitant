@@ -1,7 +1,6 @@
 """Ejecuta una pregunta fija con un modelo compatible con LiteLLM."""
 
 import asyncio
-from pathlib import Path
 import subprocess
 from dotenv import load_dotenv
 
