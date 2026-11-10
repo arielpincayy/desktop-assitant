@@ -1,3 +1,11 @@
 import os
 
-DATABASE_URL = os.environ["DATABASE_URL"]
+from sqlalchemy import URL
+
+DATABASE_URL = URL.create(
+    "postgresql+psycopg",
+    username=os.getenv("POSTGRES_USER", "reminders"),
+    password=os.environ["POSTGRES_PASSWORD"],
+    host=os.getenv("POSTGRES_HOST", "localhost"),
+    database=os.getenv("POSTGRES_DB", "reminders"),
+)
