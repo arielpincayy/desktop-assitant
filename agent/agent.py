@@ -7,6 +7,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 import CONFIG
+from agent.tools import REMINDER_TOOLS
 
 class Agent:
     def __init__(self, name: str, instruction: str):
@@ -19,7 +20,13 @@ class Agent:
         return LlmAgent(
             name=self.name,
             model=LiteLlm(model=self.model),
-            instruction=self.instruction,
+            instruction=(
+                self.instruction
+                + " Usa las herramientas para consultar y gestionar recordatorios. "
+                + "Solo opera sobre el usuario actual; elimina un recordatorio "
+                + "únicamente cuando el usuario lo solicite claramente."
+            ),
+            tools=REMINDER_TOOLS,
         )
 
     async def create_session(self) -> None:

@@ -3,10 +3,14 @@
 import asyncio
 import subprocess
 from dotenv import load_dotenv
+import sys
 
 from agent.agent import Agent
 
-QUESTION = "hola amigazo, cuentame un chiste corto y divertido en español, por favor."
+QUESTION = "Hola!"
+
+if len(sys.argv) > 1:
+    QUESTION = sys.argv[1]
 
 load_dotenv(".env")
 
@@ -27,4 +31,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+
     asyncio.run(main())
