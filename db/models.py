@@ -10,7 +10,8 @@ reminders = Table(
     Column("user_id", Text, nullable=False),
     Column("title", Text, nullable=False),
     Column("description", Text),
-    Column("remind_at", Text, nullable=False),
+    # Cron de 6 campos: "seg min hora díaMes mes díaSemana"
+    Column("schedule", Text, nullable=False),
     Column("timezone", Text, nullable=False, server_default="America/Guayaquil"),
     Column("status", Text, nullable=False, server_default="pending"),
     Column("created_at", Text, nullable=False, server_default=func.current_timestamp()),

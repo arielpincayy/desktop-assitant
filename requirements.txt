@@ -8,3 +8,4 @@ uvicorn[standard]
 requests
 sqlalchemy
 psycopg[binary]
+croniter

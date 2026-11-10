@@ -6,10 +6,25 @@ from .database import engine
 from .models import reminders
 from .schemas import ReminderCreate, ReminderPatch
 from sqlalchemy import delete, insert, select, update
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
+
+from croniter import croniter
 
 
 router = APIRouter(prefix="/reminders", tags=["Reminders"])
+
+def _out(row) -> dict[str, Any]:
+    """Fila + next_run (ISO con offset): próxima ejecución según el cron."""
+    d = dict(row._mapping)
+    try:
+        base = datetime.now(ZoneInfo(d["timezone"]))
+        d["next_run"] = croniter(d["schedule"], base, second_at_beginning=True).get_next(datetime).isoformat()
+    except Exception:
+        d["next_run"] = None
+    return d
+
 
 def not_found() -> HTTPException:
     return HTTPException(status_code=404, detail="Reminder not found")
@@ -31,7 +46,7 @@ def list_reminders(
 
     with engine.connect() as connection:
         return [
-            dict(row._mapping)
+            _out(row)
             for row in connection.execute(query)
         ]
 
@@ -42,7 +57,7 @@ def get_reminder(reminder_id: int) -> dict[str, Any]:
         row = connection.execute(select(reminders).where(reminders.c.id == reminder_id)).first()
     if row is None:
         raise not_found()
-    return dict(row._mapping)
+    return _out(row)
 
 
 @router.post("", status_code=201)
@@ -51,7 +66,7 @@ def create_reminder(reminder: ReminderCreate) -> dict[str, Any]:
         row = connection.execute(
             insert(reminders).values(**reminder.model_dump()).returning(reminders)
         ).one()
-    return dict(row._mapping)
+    return _out(row)
 
 
 @router.patch("/{reminder_id}")
@@ -65,7 +80,7 @@ def update_reminder(reminder_id: int, reminder: ReminderPatch) -> dict[str, Any]
         ).first()
     if row is None:
         raise not_found()
-    return dict(row._mapping)
+    return _out(row)
 
 
 @router.delete("/{reminder_id}", status_code=204)

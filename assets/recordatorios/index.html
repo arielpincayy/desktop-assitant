@@ -39,8 +39,34 @@
         <label>Descripción
           <textarea id="f-desc" rows="3" maxlength="300"></textarea>
         </label>
-        <label>Cuándo recordar
-          <input id="f-when" type="datetime-local" required>
+        <label>Repetir
+          <select id="f-kind">
+            <option value="once">Una vez</option>
+            <option value="daily">Cada día</option>
+            <option value="weekdays">Ciertos días de la semana</option>
+            <option value="days">Cada X días</option>
+            <option value="hours">Cada X horas</option>
+            <option value="min">Cada X minutos</option>
+            <option value="sec">Cada X segundos</option>
+            <option value="custom">Cron avanzado</option>
+          </select>
+        </label>
+        <div class="wd" data-k="weekdays">
+          <label><input type="checkbox" value="1">L</label>
+          <label><input type="checkbox" value="2">M</label>
+          <label><input type="checkbox" value="3">X</label>
+          <label><input type="checkbox" value="4">J</label>
+          <label><input type="checkbox" value="5">V</label>
+          <label><input type="checkbox" value="6">S</label>
+          <label><input type="checkbox" value="0">D</label>
+        </div>
+        <div class="two">
+          <label data-k="once">Fecha <input id="f-date" type="date" required></label>
+          <label data-k="once daily weekdays days">Hora <input id="f-time" type="time" required></label>
+          <label data-k="days hours min sec">Cada <input id="f-n" type="number" min="1" max="59" value="1" required></label>
+        </div>
+        <label data-k="custom">Cron (seg min hora díaMes mes díaSemana)
+          <input id="f-cron" placeholder="0 0 9 * * 1-5" autocomplete="off" required>
         </label>
         <div class="chips">
           <button type="button" data-in="60">En 1 hora</button>
@@ -53,6 +79,7 @@
       </form>
     </dialog>
   </main>
+  <script src="cron.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

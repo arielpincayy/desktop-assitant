@@ -60,13 +60,17 @@ def get_reminder(reminder_id: int) -> Any:
 
 def create_reminder(
     title: str,
-    remind_at: str,
+    schedule: str,
     description: str | None = None,
     timezone: str = "America/Guayaquil",
 ) -> Any:
     """Crea un recordatorio para el usuario actual (queda en estado "pending").
 
-    remind_at: fecha/hora ISO 8601 en hora local de `timezone`, p. ej. "2026-11-10T17:00:00".
+    schedule: cron de 6 campos "seg min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
+    Ejemplos: una vez el 10-nov a las 17:00 "0 0 17 10 11 *"; cada día 09:00 "0 0 9 * * *";
+    lunes a viernes 08:30 "0 30 8 * * 1-5"; cada 2 horas "0 0 */2 * * *"; cada 15 min "0 */15 * * * *";
+    cada 30 s "*/30 * * * * *". Para recordatorios de una sola vez usa fecha concreta (no repite
+    este año) y el ejecutor lo marca "done" al dispararse.
     timezone: nombre IANA, p. ej. "America/Guayaquil".
     """
     return _request(
@@ -76,7 +80,7 @@ def create_reminder(
             "user_id": CONFIG.USER_ID,
             "title": title,
             "description": description,
-            "remind_at": remind_at,
+            "schedule": schedule,
             "timezone": timezone,
         },
     )
@@ -86,13 +90,17 @@ def update_reminder(
     reminder_id: int,
     title: str | None = None,
     description: str | None = None,
-    remind_at: str | None = None,
+    schedule: str | None = None,
     timezone: str | None = None,
     status: str | None = None,
 ) -> Any:
     """Edita solo los campos indicados de un recordatorio propio.
 
-    remind_at: ISO 8601 en hora local de `timezone`, p. ej. "2026-11-10T17:00:00".
+    schedule: (opcional) cron de 6 campos "seg min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
+    Ejemplos: una vez el 10-nov a las 17:00 "0 0 17 10 11 *"; cada día 09:00 "0 0 9 * * *";
+    lunes a viernes 08:30 "0 30 8 * * 1-5"; cada 2 horas "0 0 */2 * * *"; cada 15 min "0 */15 * * * *";
+    cada 30 s "*/30 * * * * *". Para recordatorios de una sola vez usa fecha concreta (no repite
+    este año) y el ejecutor lo marca "done" al dispararse.
     status: "pending" o "done" (usa "done" para marcarlo como completado).
     """
     current = get_reminder(reminder_id)
@@ -103,7 +111,7 @@ def update_reminder(
         for key, value in {
             "title": title,
             "description": description,
-            "remind_at": remind_at,
+            "schedule": schedule,
             "timezone": timezone,
             "status": status,
         }.items()

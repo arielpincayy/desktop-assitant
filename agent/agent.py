@@ -22,7 +22,7 @@ class Agent:
         now = datetime.now(ZoneInfo("America/Guayaquil")).strftime("%Y-%m-%d %H:%M (%A)")
         return (
             f"{self.instruction} Fecha y hora actual: {now}, zona America/Guayaquil; "
-            "úsala para convertir fechas relativas a ISO 8601. "
+            "úsala para convertir lo que pida el usuario (fechas relativas, repeticiones) a una expresión cron de 6 campos con segundos primero. "
             "Usa las herramientas para consultar y gestionar recordatorios. "
             "Si el usuario no da el id, usa list_reminders para encontrarlo y pregunta si hay varias coincidencias. "
             "Solo opera sobre el usuario actual; elimina un recordatorio "

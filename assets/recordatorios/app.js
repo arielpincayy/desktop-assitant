@@ -22,7 +22,7 @@ async function api(method, path, body) {
 }
 async function load() {
   const rows = await api("GET", "/reminders?user_id=" + encodeURIComponent(USER) + "&limit=500");
-  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", when: new Date(r.remind_at), done: r.status === "done" }));
+  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.next_run), done: r.status === "done" }));
   render();
 }
 const save = (method, path, body) => api(method, path, body).then(load).catch(() => {});
@@ -40,11 +40,10 @@ const dayLabel = (d) => {
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 function row(r) {
-  const late = !r.done && r.when < now ? " late" : "";
-  return `<div class="row${r.done ? " done" : ""}${late}" data-id="${r.id}">
+  return `<div class="row${r.done ? " done" : ""}" data-id="${r.id}">
     <input type="checkbox" ${r.done ? "checked" : ""} aria-label="Marcar como hecho: ${esc(r.title)}">
     <div class="time">${fmtTime(r.when)}</div>
-    <div class="body"><b>${esc(r.title)}</b>${r.desc ? `<span>${esc(r.desc)}</span>` : ""}</div>
+    <div class="body"><b>${esc(r.title)}</b><span class="rec">${esc(Cron.describe(r.schedule))}</span>${r.desc ? `<span>${esc(r.desc)}</span>` : ""}</div>
     <div class="tools">
       <button class="edit" aria-label="Editar ${esc(r.title)}">✎</button>
       <button class="del" aria-label="Eliminar ${esc(r.title)}">🗑</button>
@@ -74,18 +73,45 @@ function openForm(r, title = "") {
   $("save").textContent = r ? "Guardar cambios" : "Guardar recordatorio";
   $("f-title").value = r ? r.title : title;
   $("f-desc").value = r ? r.desc : "";
-  $("f-when").value = iso(r ? r.when : new Date(now.getTime() + 36e5));
+  setWhen(r ? Cron.fromCron(r.schedule, r.when) : { kind: "once", ...dt(new Date(now.getTime() + 36e5)) });
   $("dlg").show(); // no modal: así queda dentro de .win y no de la pantalla
   $("f-title").focus();
 }
+const dt = (d) => ({ date: iso(d).slice(0, 10), time: iso(d).slice(11, 16) });
+const KINDS = () => $("dlg").querySelectorAll("[data-k]");
+function showKind() {
+  const k = $("f-kind").value;
+  for (const el of KINDS()) {
+    const on = el.dataset.k.split(" ").includes(k);
+    el.hidden = !on;
+    el.querySelectorAll("input").forEach((i) => { if (i.type !== "checkbox") i.disabled = !on; });
+  }
+}
+$("f-kind").onchange = showKind;
+function setWhen(f) {
+  $("f-kind").value = f.kind;
+  $("f-date").value = f.date || dt(now).date;
+  $("f-time").value = f.time || "09:00";
+  $("f-n").value = f.n || 1;
+  $("f-cron").value = f.cron || "";
+  $("dlg").querySelectorAll(".wd input").forEach((c) => (c.checked = (f.days || []).includes(+c.value)));
+  showKind();
+}
+const getSchedule = () => Cron.toCron({
+  kind: $("f-kind").value, date: $("f-date").value, time: $("f-time").value, n: +$("f-n").value,
+  cron: $("f-cron").value, days: [...document.querySelectorAll(".wd input:checked")].map((c) => +c.value),
+});
+
 $("dlg").onkeydown = (e) => { if (e.key === "Escape") $("dlg").close(); };
 $("cancel").onclick = () => $("dlg").close();
 document.querySelector(".chips").onclick = (e) => {
   const k = e.target.dataset.in; if (!k) return;
-  $("f-when").value = iso(k === "tomorrow" ? at(1, 9, 0) : new Date(Date.now() + k * 6e4));
+  setWhen({ kind: "once", ...dt(k === "tomorrow" ? at(1, 9, 0) : new Date(Date.now() + k * 6e4)) });
 };
-$("form").onsubmit = () => {
-  const data = { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, remind_at: $("f-when").value + ":00" };
+$("form").onsubmit = (e) => {
+  const schedule = getSchedule();
+  if (!schedule) { e.preventDefault(); return toast("Completa la repetición (p. ej. elige algún día)", false); }
+  const data = { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, schedule };
   if (editing) save("PATCH", "/reminders/" + editing.id, data);
   else save("POST", "/reminders", { user_id: USER, ...data });
 };
@@ -111,7 +137,7 @@ $("close-toast").onclick = () => ($("toast").hidden = true);
 $("undo").onclick = () => {
   $("toast").hidden = true;
   const r = trashed; trashed = null;
-  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, remind_at: iso(r.when) + ":00", status: r.done ? "done" : "pending" });
+  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, status: r.done ? "done" : "pending" });
 };
 
 load().catch(() => {});
