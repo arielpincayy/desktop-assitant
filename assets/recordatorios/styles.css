@@ -102,6 +102,15 @@ dialog input, dialog textarea, dialog select {
   border: 1px solid var(--line); border-radius: 8px; background: var(--paper); resize: none;
 }
 [hidden] { display: none !important; }
+/* WebKitGTK pinta el select con el tema GTK e ignora el fondo; appearance:none lo respeta */
+dialog select {
+  appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer;
+  background-color: var(--paper); color: var(--ink);
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+dialog select option { background: var(--raise); color: var(--ink); }
 dialog input[type=checkbox] { display: inline; width: auto; margin: 0; }
 .two { display: flex; gap: 10px; }
 .two label { flex: 1; }
