@@ -20,6 +20,16 @@ Cada ejecución muestra el fantasmita azul, que salta y dice el mensaje. Se qued
 visible hasta pulsar el botón ×. El resto de la superficie deja pasar los clics.
 Sin argumento, muestra «¡Hola caracola! 👋».
 
+## Ventana de recordatorios
+
+Ventana normal GTK + WebKit (`recordatorios.py`, UI en `assets/recordatorios/`) para
+listar, crear, editar, completar y borrar recordatorios. Requiere la API en marcha
+(`REMINDERS_API_URL`, por defecto `http://localhost:8001`).
+
+```sh
+./mostrar-recordatorios.sh
+```
+
 ## Agente de ejemplo
 
 El directorio `agent/` contiene un agente pequeño con Google ADK y LiteLLM. Lee

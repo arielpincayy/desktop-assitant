@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recordatorios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="win" aria-label="Recordatorios">
+
+    <section class="head">
+      <img src="../fantasmita.svg" alt="" width="40" height="47">
+      <h1 id="today"></h1>
+    </section>
+
+    <form id="quick" class="quick">
+      <label class="sr" for="quick-input">Nuevo recordatorio</label>
+      <input id="quick-input" placeholder="Escribe un recordatorio y pulsa Enter" autocomplete="off">
+    </form>
+
+    <div id="list" class="list"></div>
+
+    <div id="toast" class="toast" role="status" hidden>
+      <span id="toast-msg"></span>
+      <button id="undo" type="button">Deshacer</button>
+    </div>
+
+    <dialog id="dlg">
+      <form id="form" method="dialog">
+        <h2 id="dlg-title">Nuevo recordatorio</h2>
+        <label>Título
+          <input id="f-title" required maxlength="80" autocomplete="off">
+        </label>
+        <label>Descripción
+          <textarea id="f-desc" rows="3" maxlength="300"></textarea>
+        </label>
+        <label>Cuándo recordar
+          <input id="f-when" type="datetime-local" required>
+        </label>
+        <div class="chips">
+          <button type="button" data-in="60">En 1 hora</button>
+          <button type="button" data-in="tomorrow">Mañana 9:00</button>
+        </div>
+        <div class="actions">
+          <button type="button" id="cancel" class="ghost">Cancelar</button>
+          <button type="submit" id="save" class="primary">Guardar recordatorio</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
