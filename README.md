@@ -47,15 +47,15 @@ editando `QUESTION` en `agent/main.py`.
 
 ## API de recordatorios
 
-PostgreSQL corre en Docker (`db`, volumen `pg_data`, solo en `127.0.0.1:5432`);
+PostgreSQL corre en Docker (`db`, volumen `pg_data`, solo en `127.0.0.1:5434`);
 la API corre en el venv del proyecto. Define `POSTGRES_PASSWORD` en `.env`
 (ver `.env.example`). La API crea la tabla `reminders` con SQLAlchemy
-(`metadata.create_all`) al iniciar y escucha en `http://localhost:8000`.
+(`metadata.create_all`) al iniciar y escucha en `http://localhost:8001`.
 
 ```sh
 docker compose up -d
 uvicorn db.api:app --env-file .env
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 Python puede consultar o administrar recordatorios por HTTP:
@@ -64,7 +64,7 @@ Python puede consultar o administrar recordatorios por HTTP:
 import requests
 
 response = requests.get(
-    "http://localhost:8000/reminders",
+    "http://localhost:8001/reminders",
     params={"user_id": "usuario", "status": "pending"},
 )
 print(response.json())
@@ -72,7 +72,7 @@ print(response.json())
 
 La API ofrece `GET /reminders`, `GET /reminders/{id}`, `POST /reminders`,
 `PATCH /reminders/{id}` y `DELETE /reminders/{id}`. La documentación interactiva
-está en `http://localhost:8000/docs`. Para borrar la base y el volumen:
+está en `http://localhost:8001/docs`. Para borrar la base y el volumen:
 
 ```sh
 docker compose down -v
