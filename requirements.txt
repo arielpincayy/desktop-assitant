@@ -3,3 +3,7 @@
 google-adk
 litellm
 python-dotenv
+fastapi
+uvicorn[standard]
+requests
+sqlalchemy

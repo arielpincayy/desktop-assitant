@@ -45,6 +45,37 @@ Puedes cambiar el modelo LiteLLM con `AGENT_MODEL` en `.env` y el endpoint con
 usar la API compatible con OpenAI de TokenHarbor. La pregunta fija se cambia
 editando `QUESTION` en `agent/main.py`.
 
+## API SQLite de recordatorios
+
+La API crea la tabla `reminders` con SQLAlchemy (`metadata.create_all`) al iniciar. SQLite guarda
+los datos en el volumen Docker `reminders_data`; la API está disponible solo
+desde la máquina local en `http://localhost:8000`.
+
+```sh
+docker compose up --build -d
+curl http://localhost:8000/health
+```
+
+Python puede consultar o administrar recordatorios por HTTP:
+
+```python
+import requests
+
+response = requests.get(
+    "http://localhost:8000/reminders",
+    params={"user_id": "usuario", "status": "pending"},
+)
+print(response.json())
+```
+
+La API ofrece `GET /reminders`, `GET /reminders/{id}`, `POST /reminders`,
+`PATCH /reminders/{id}` y `DELETE /reminders/{id}`. La documentación interactiva
+está en `http://localhost:8000/docs`. Para borrar la base y el volumen:
+
+```sh
+docker compose down -v
+```
+
 ## Requisitos
 
 - Pop!_OS con COSMIC y sesión Wayland.

@@ -1,0 +1,11 @@
+services:
+  reminders-api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - reminders_data:/data
+    restart: unless-stopped
+
+volumes:
+  reminders_data:
