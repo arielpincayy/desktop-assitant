@@ -7,5 +7,6 @@ DATABASE_URL = URL.create(
     username=os.getenv("POSTGRES_USER", "reminders"),
     password=os.environ["POSTGRES_PASSWORD"],
     host=os.getenv("POSTGRES_HOST", "localhost"),
+    port=int(os.getenv("POSTGRES_PORT", "5434")),
     database=os.getenv("POSTGRES_DB", "reminders"),
 )

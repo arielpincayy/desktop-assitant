@@ -119,6 +119,8 @@ dialog input, dialog textarea {
   padding: 10px 14px; border-radius: 8px; background: var(--ink); color: var(--paper);
 }
 .toast[hidden] { display: none; }
+.toast span { flex: 1; }
+.toast .x { margin-left: 12px; text-decoration: none; font-size: 18px; line-height: 1; }
 .toast button { background: none; border: 0; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -98,20 +98,20 @@ $("list").onclick = (e) => {
   else if (e.target.closest(".edit")) openForm(r);
   else if (e.target.closest(".del")) {
     el.classList.add("out");
-    setTimeout(() => { flush(); trashed = r; items = items.filter((x) => x !== r); render(); toast("Recordatorio eliminado"); }, 200);
+    // Se borra en la API al instante (cerrar la ventana no lo deja pendiente); Deshacer lo vuelve a crear.
+    setTimeout(() => api("DELETE", "/reminders/" + r.id).then(() => { trashed = r; return load(); }).then(() => toast("Recordatorio eliminado")).catch(() => {}), 200);
   }
 };
 
-// El DELETE real se envía al vencer el toast; Deshacer solo cancela.
-function flush() {
-  clearTimeout(toastTimer);
-  if (trashed) save("DELETE", "/reminders/" + trashed.id);
-  trashed = null; $("toast").hidden = true;
-}
 function toast(msg, undo = true) {
   $("toast-msg").textContent = msg; $("toast").hidden = false; $("undo").hidden = !undo;
-  clearTimeout(toastTimer); toastTimer = setTimeout(flush, 5000);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => ($("toast").hidden = true), 5000);
 }
-$("undo").onclick = () => { clearTimeout(toastTimer); trashed = null; $("toast").hidden = true; load(); };
+$("close-toast").onclick = () => ($("toast").hidden = true);
+$("undo").onclick = () => {
+  $("toast").hidden = true;
+  const r = trashed; trashed = null;
+  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, remind_at: iso(r.when) + ":00", status: r.done ? "done" : "pending" });
+};
 
 load().catch(() => {});
