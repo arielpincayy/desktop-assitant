@@ -5,9 +5,7 @@ from sqlalchemy import select
 from .database import engine
 from .models import reminders
 from .schemas import ReminderCreate, ReminderPatch
-from sqlalchemy import (
-    delete, insert, select, update,
-)
+from sqlalchemy import delete, insert, select, update
 from typing import Any
 
 
@@ -23,12 +21,7 @@ def list_reminders(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
-    query = (
-        select(reminders)
-        .order_by(reminders.c.id)
-        .limit(limit)
-        .offset(offset)
-    )
+    query = select(reminders).order_by(reminders.c.id).limit(limit).offset(offset)
 
     if user_id is not None:
         query = query.where(reminders.c.user_id == user_id)
