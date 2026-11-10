@@ -7,7 +7,7 @@ import requests
 
 import CONFIG
 
-API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8000").rstrip("/")
+API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001").rstrip("/")
 TIMEOUT_SECONDS = 5
 
 
@@ -39,7 +39,11 @@ def _request(method: str, path: str, **kwargs: Any) -> Any:
 
 
 def list_reminders(status: str | None = None) -> Any:
-    """Lista los recordatorios del usuario actual, opcionalmente filtrados por estado."""
+    """Lista los recordatorios del usuario actual.
+
+    status: filtro opcional, "pending" (por hacer) o "done" (completado). Sin filtro devuelve todos.
+    Úsala también para encontrar el id de un recordatorio cuando el usuario no lo da.
+    """
     params: dict[str, str] = {"user_id": CONFIG.USER_ID}
     if status:
         params["status"] = status
@@ -47,7 +51,7 @@ def list_reminders(status: str | None = None) -> Any:
 
 
 def get_reminder(reminder_id: int) -> Any:
-    """Consulta un recordatorio propio por su identificador."""
+    """Consulta un recordatorio por su id. Devuelve un error si no existe o no es del usuario."""
     reminder = _request("GET", f"/reminders/{reminder_id}")
     if isinstance(reminder, dict) and reminder.get("user_id") != CONFIG.USER_ID:
         return {"error": "Recordatorio no encontrado para el usuario actual."}
@@ -60,7 +64,11 @@ def create_reminder(
     description: str | None = None,
     timezone: str = "America/Guayaquil",
 ) -> Any:
-    """Crea un recordatorio para el usuario actual. remind_at debe ser fecha/hora ISO 8601."""
+    """Crea un recordatorio para el usuario actual (queda en estado "pending").
+
+    remind_at: fecha/hora ISO 8601 en hora local de `timezone`, p. ej. "2026-11-10T17:00:00".
+    timezone: nombre IANA, p. ej. "America/Guayaquil".
+    """
     return _request(
         "POST",
         "/reminders",
@@ -81,9 +89,12 @@ def update_reminder(
     remind_at: str | None = None,
     timezone: str | None = None,
     status: str | None = None,
-    notified_at: str | None = None,
 ) -> Any:
-    """Edita los campos indicados de un recordatorio propio."""
+    """Edita solo los campos indicados de un recordatorio propio.
+
+    remind_at: ISO 8601 en hora local de `timezone`, p. ej. "2026-11-10T17:00:00".
+    status: "pending" o "done" (usa "done" para marcarlo como completado).
+    """
     current = get_reminder(reminder_id)
     if not isinstance(current, dict) or current.get("user_id") != CONFIG.USER_ID:
         return current
@@ -95,7 +106,6 @@ def update_reminder(
             "remind_at": remind_at,
             "timezone": timezone,
             "status": status,
-            "notified_at": notified_at,
         }.items()
         if value is not None
     }

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 class ReminderCreate(BaseModel):
@@ -6,7 +8,7 @@ class ReminderCreate(BaseModel):
     description: str | None = None
     remind_at: str = Field(min_length=1)
     timezone: str = "America/Guayaquil"
-    status: str = "pending"
+    status: Literal["pending", "done"] = "pending"
 
 
 class ReminderPatch(BaseModel):
@@ -15,5 +17,5 @@ class ReminderPatch(BaseModel):
     description: str | None = None
     remind_at: str | None = None
     timezone: str | None = None
-    status: str | None = None
+    status: Literal["pending", "done"] | None = None
     notified_at: str | None = None

@@ -1,5 +1,7 @@
 
+from datetime import datetime
 from typing import AsyncGenerator
+from zoneinfo import ZoneInfo
 
 from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
@@ -16,16 +18,22 @@ class Agent:
         self.instruction = instruction
         self.session_service = InMemorySessionService()
 
+    def _instruction(self, _ctx=None) -> str:
+        now = datetime.now(ZoneInfo("America/Guayaquil")).strftime("%Y-%m-%d %H:%M (%A)")
+        return (
+            f"{self.instruction} Fecha y hora actual: {now}, zona America/Guayaquil; "
+            "úsala para convertir fechas relativas a ISO 8601. "
+            "Usa las herramientas para consultar y gestionar recordatorios. "
+            "Si el usuario no da el id, usa list_reminders para encontrarlo y pregunta si hay varias coincidencias. "
+            "Solo opera sobre el usuario actual; elimina un recordatorio "
+            "únicamente cuando el usuario lo solicite claramente."
+        )
+
     def create_agent(self) -> LlmAgent:
         return LlmAgent(
             name=self.name,
             model=LiteLlm(model=self.model),
-            instruction=(
-                self.instruction
-                + " Usa las herramientas para consultar y gestionar recordatorios. "
-                + "Solo opera sobre el usuario actual; elimina un recordatorio "
-                + "únicamente cuando el usuario lo solicite claramente."
-            ),
+            instruction=self._instruction,
             tools=REMINDER_TOOLS,
         )
 
