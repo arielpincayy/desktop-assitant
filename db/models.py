@@ -15,5 +15,4 @@ reminders = Table(
     Column("status", Text, nullable=False, server_default="pending"),
     Column("created_at", Text, nullable=False, server_default=func.current_timestamp()),
     Column("notified_at", Text),
-    sqlite_autoincrement=True,
 )

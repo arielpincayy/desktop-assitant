@@ -1,11 +1,6 @@
+from sqlalchemy import create_engine, MetaData
 
-from sqlalchemy import create_engine, event, MetaData
+from .config import DATABASE_URL
 
-from .config import DB_PATH
-
-engine = create_engine(f"sqlite:///{DB_PATH}")
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 metadata = MetaData()
-
-@event.listens_for(engine, "connect")
-def enable_foreign_keys(connection, _record):
-    connection.execute("PRAGMA foreign_keys = ON")

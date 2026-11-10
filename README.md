@@ -45,11 +45,13 @@ Puedes cambiar el modelo LiteLLM con `AGENT_MODEL` en `.env` y el endpoint con
 usar la API compatible con OpenAI de TokenHarbor. La pregunta fija se cambia
 editando `QUESTION` en `agent/main.py`.
 
-## API SQLite de recordatorios
+## API de recordatorios
 
-La API crea la tabla `reminders` con SQLAlchemy (`metadata.create_all`) al iniciar. SQLite guarda
-los datos en el volumen Docker `reminders_data`; la API está disponible solo
-desde la máquina local en `http://localhost:8000`.
+La API (`reminders-api`) y PostgreSQL (`db`) corren en contenedores separados.
+Define `POSTGRES_PASSWORD` en `.env` (ver `.env.example`). La API crea la tabla
+`reminders` con SQLAlchemy (`metadata.create_all`) al iniciar. Postgres guarda
+los datos en el volumen Docker `pg_data` y no publica puertos; la API está
+disponible solo desde la máquina local en `http://localhost:8000`.
 
 ```sh
 docker compose up --build -d
