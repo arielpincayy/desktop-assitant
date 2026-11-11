@@ -22,7 +22,7 @@ async function api(method, path, body) {
 }
 async function load() {
   const rows = await api("GET", "/reminders?user_id=" + encodeURIComponent(USER) + "&limit=500");
-  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced" }));
+  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced", notified: r.notified_at, tz: r.timezone }));
   render();
 }
 const save = (method, path, body) => api(method, path, body).then(load).catch(() => {});
@@ -41,11 +41,11 @@ const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">"
 
 function row(r) {
   return `<div class="row${r.done ? " done" : ""}" data-id="${r.id}">
-    <input type="checkbox" ${r.done ? "checked" : ""} aria-label="Marcar como hecho: ${esc(r.title)}">
+    <input type="checkbox" ${r.done ? "checked" : ""}${r.ann ? " disabled" : ""} aria-label="Marcar como hecho: ${esc(r.title)}">
     <div class="time">${fmtTime(r.when)}</div>
     <div class="body"><b>${esc(r.title)}</b><span class="rec">${esc(Cron.describe(r.schedule))}</span>${r.desc ? `<span>${esc(r.desc)}</span>` : ""}</div>
     <div class="tools">
-      <button class="edit" aria-label="Editar ${esc(r.title)}">✎</button>
+      ${r.ann ? "" : `<button class="edit" aria-label="Editar ${esc(r.title)}">✎</button>`}
       <button class="del" aria-label="Eliminar ${esc(r.title)}">🗑</button>
     </div></div>`;
 }
@@ -176,7 +176,7 @@ $("close-toast").onclick = () => ($("toast").hidden = true);
 $("undo").onclick = () => {
   $("toast").hidden = true;
   const r = trashed; trashed = null;
-  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, status: r.done ? "done" : "pending" });
+  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, timezone: r.tz, status: r.ann ? "announced" : r.done ? "done" : "pending", notified_at: r.notified });
 };
 
 load().catch(() => {});

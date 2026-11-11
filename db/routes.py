@@ -81,6 +81,9 @@ def update_reminder(reminder_id: int, reminder: ReminderPatch) -> dict[str, Any]
     if not changes:
         raise HTTPException(status_code=400, detail="No fields to update")
     with engine.begin() as connection:
+        current = connection.execute(select(reminders.c.status).where(reminders.c.id == reminder_id)).scalar()
+        if current == "announced":
+            raise HTTPException(status_code=409, detail="Announced reminders cannot be modified")
         row = connection.execute(
             update(reminders).where(reminders.c.id == reminder_id).values(**changes).returning(reminders)
         ).first()

@@ -16,6 +16,7 @@ class ReminderCreate(BaseModel):
     schedule: str = Field(min_length=1)
     timezone: str = "America/Guayaquil"
     status: Literal["pending", "done", "announced"] = "pending"
+    notified_at: str | None = None
 
     _v = field_validator("schedule")(_check_cron)
 
