@@ -37,6 +37,10 @@ marcador `# ulu-reminder`), que ejecuta `recordar.py <id>` y muestra la mascota 
 título y descripción. La API resincroniza el crontab al crear, editar o borrar, y al
 arrancar. Requiere Postgres arriba al disparar.
 
+Si la PC estaba apagada a la hora de un recordatorio, al iniciar sesión se muestran
+los perdidos de uno en uno (`recordar.py --pendientes`; el autostart lo crea
+`./instalar-ulu.sh`). Un recurrente perdido varias veces se anuncia una sola vez.
+
 ## Agente de ejemplo
 
 El directorio `agent/` contiene un agente pequeño con Google ADK y LiteLLM. Lee

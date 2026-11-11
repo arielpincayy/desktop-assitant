@@ -1,6 +1,9 @@
 import subprocess
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+from croniter import croniter
 from sqlalchemy import select
 
 from .models import reminders
@@ -12,6 +15,12 @@ MARK = "# ulu-reminder"
 def to_line(reminder_id: int, schedule: str) -> str:
     # ponytail: cron del sistema no tiene zona por línea: se asume la tz del sistema. Añadir CRON_TZ si hace falta.
     return f"{schedule} cd '{ROOT}' && .venv/bin/python recordar.py {reminder_id} {MARK}"
+
+
+def missed(schedule: str, tz: str, since: datetime, now: datetime) -> datetime | None:
+    """Última ocurrencia del cron posterior a `since` (y <= now), o None. Solo la última: no acumula."""
+    prev = croniter(schedule, now.astimezone(ZoneInfo(tz))).get_prev(datetime)
+    return prev if prev > since else None
 
 
 def sync(connection) -> None:

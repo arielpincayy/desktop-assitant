@@ -17,3 +17,15 @@ StartupWMClass=ulu
 EOF
 update-desktop-database "$dest" 2>/dev/null || true
 echo "Instalado: $dest/ulu.desktop"
+
+# Al iniciar sesión: anuncia los recordatorios que se perdieron con la PC apagada.
+auto="${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
+mkdir -p "$auto"
+cat > "$auto/ulu-pendientes.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=ULU pendientes
+Exec=$dir/.venv/bin/python $dir/recordar.py --pendientes
+Terminal=false
+EOF
+echo "Instalado: $auto/ulu-pendientes.desktop"
