@@ -1,35 +1,45 @@
-"""Ejecuta una pregunta fija con un modelo compatible con LiteLLM."""
+"""Levanta la API de recordatorios y el chat con ULU (uvicorn)."""
 
 import asyncio
-import subprocess
+import os
+import threading
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
-import sys
+
+load_dotenv(".env")  # antes de importar db: db/config.py lee POSTGRES_PASSWORD al importar
+
+import uvicorn
+from pydantic import BaseModel, Field
 
 from agent.agent import Agent
+from db.api import app
 
-QUESTION = "Hola!"
+API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001")
 
-if len(sys.argv) > 1:
-    QUESTION = sys.argv[1]
+# Las tools hacen requests síncronos contra esta misma API: el agente corre en su
+# propio loop/hilo para no bloquear el loop de uvicorn.
+# ponytail: un solo hilo y una sesión global; chats concurrentes se serializan.
+loop = asyncio.new_event_loop()
+threading.Thread(target=loop.run_forever, daemon=True).start()
+runner = asyncio.run_coroutine_threadsafe(
+    Agent(
+        name="ulu",
+        instruction="Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español.",
+    ).initialize(),
+    loop,
+).result()
 
-load_dotenv(".env")
 
-def mascot_say(message: str) -> None:
-    """Muestra un mensaje en la mascota."""
-    subprocess.Popen(["./mostrar-mascota.sh", "--mensaje", message])
+class ChatIn(BaseModel):
+    message: str = Field(min_length=1)
 
 
-async def main() -> None:
-
-    agent = await Agent(
-        name="agente_preguntas",
-        instruction="Responde de forma clara, breve y en español.",
-    ).initialize()
-
-    response = await Agent.ask(QUESTION, agent)
-    if response: mascot_say(response)
+@app.post("/chat")
+def chat(body: ChatIn) -> dict[str, str]:
+    reply = asyncio.run_coroutine_threadsafe(Agent.ask(body.message, runner), loop).result()
+    return {"reply": reply or "No tengo respuesta."}
 
 
 if __name__ == "__main__":
-
-    asyncio.run(main())
+    uvicorn.run(app, host="127.0.0.1", port=urlparse(API_URL).port or 8001)

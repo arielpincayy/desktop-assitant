@@ -64,9 +64,13 @@ la API corre en el venv del proyecto. Define `POSTGRES_PASSWORD` en `.env`
 
 ```sh
 docker compose up -d
-uvicorn db.api:app --env-file .env
+.venv/bin/python main.py   # API + agente ULU (carga .env)
 curl http://localhost:8001/health
 ```
+
+`main.py` también expone `POST /chat` (`{"message": "..."}` → `{"reply": "..."}`):
+es el chat con ULU que abre el botón «Hablar con ULU» del formulario de la ventana
+de recordatorios. ULU usa libremente las tools de `agent/tools.py`.
 
 Python puede consultar o administrar recordatorios por HTTP:
 

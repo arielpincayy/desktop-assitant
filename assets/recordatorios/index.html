@@ -73,9 +73,24 @@
           <button type="button" data-in="tomorrow">Mañana 9:00</button>
         </div>
         <div class="actions">
+          <button type="button" id="ulu-open" class="ghost ulu">👻 Hablar con ULU</button>
           <button type="button" id="cancel" class="ghost">Cancelar</button>
           <button type="submit" id="save" class="primary">Guardar recordatorio</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="chat" aria-label="Chat con ULU">
+      <div class="chat-head">
+        <img src="../fantasmita.svg" alt="" width="24" height="28">
+        <h2>ULU</h2>
+        <button type="button" id="chat-close" class="x" aria-label="Cerrar chat">×</button>
+      </div>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form">
+        <label class="sr" for="chat-input">Mensaje para ULU</label>
+        <input id="chat-input" placeholder="Pídele a ULU que cree, busque, cambie o borre…" autocomplete="off" required>
+        <button type="submit" class="primary">Enviar</button>
       </form>
     </dialog>
   </main>

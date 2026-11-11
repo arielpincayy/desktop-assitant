@@ -129,6 +129,21 @@ dialog input[type=checkbox] { display: inline; width: auto; margin: 0; }
 .primary { background: var(--ghost-deep); color: #fff; }
 @media (prefers-color-scheme: dark) { .primary { color: #08111f; } }
 
+.actions .ulu { margin-right: auto; padding-left: 0; color: var(--ghost-deep); }
+#chat[open] { display: flex; flex-direction: column; height: 75%; }
+.chat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.chat-head h2 { margin: 0; flex: 1; }
+.chat-head .x { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); }
+.chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
+.msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--paper); border: 1px solid var(--line); }
+.msg.me { align-self: flex-end; background: var(--ghost-deep); border-color: transparent; color: #fff; }
+@media (prefers-color-scheme: dark) { .msg.me { color: #08111f; } }
+.msg.wait { color: var(--muted); font-style: italic; }
+.msg.err { color: var(--alarm); }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { margin: 0; flex: 1; }
+.chat-form button { padding: 8px 14px; border-radius: 8px; border: 0; cursor: pointer; font-weight: 700; }
+
 .toast {
   position: absolute; left: 16px; right: 16px; bottom: 14px; z-index: 5;
   display: flex; justify-content: space-between; align-items: center;

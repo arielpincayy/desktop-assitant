@@ -129,6 +129,42 @@ $("list").onclick = (e) => {
   }
 };
 
+// Chat con ULU: POST /chat; después se recarga la lista por si ULU cambió algo.
+$("ulu-open").onclick = () => {
+  const t = $("f-title").value.trim();
+  $("dlg").close();
+  $("chat").show();
+  if (t && !$("chat-input").value) $("chat-input").value = t;
+  $("chat-input").focus();
+};
+$("chat-close").onclick = () => $("chat").close();
+$("chat").onkeydown = (e) => { if (e.key === "Escape") $("chat").close(); };
+function bubble(cls, text) {
+  const b = document.createElement("div");
+  b.className = "msg " + cls; b.textContent = text;
+  $("chat-log").append(b); b.scrollIntoView({ block: "end" });
+  return b;
+}
+$("chat-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const input = $("chat-input"), message = input.value.trim();
+  if (!message) return;
+  input.value = ""; input.disabled = true;
+  bubble("me", message);
+  const wait = bubble("wait", "ULU está pensando…");
+  try {
+    const res = await fetch(API + "/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }),
+    });
+    if (!res.ok) throw new Error(res.status);
+    wait.className = "msg"; wait.textContent = (await res.json()).reply;
+    load().catch(() => {});
+  } catch {
+    wait.className = "msg err"; wait.textContent = "No pude hablar con ULU. ¿Está corriendo main.py?";
+  }
+  input.disabled = false; input.focus();
+};
+
 function toast(msg, undo = true) {
   $("toast-msg").textContent = msg; $("toast").hidden = false; $("undo").hidden = !undo;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => ($("toast").hidden = true), 5000);
