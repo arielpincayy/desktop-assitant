@@ -1,6 +1,7 @@
 """Uso: recordar.py <id>. Lo invoca cron: muestra la mascota con el recordatorio."""
 
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,6 +12,9 @@ load_dotenv(ROOT / ".env")  # antes de importar db: lee POSTGRES_PASSWORD
 # cron no trae entorno gráfico
 os.environ.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
 os.environ.setdefault("WAYLAND_DISPLAY", "wayland-1")
+
+# Idempotente: no hace nada si el contenedor ya está arriba; si no, lo levanta y espera.
+subprocess.run(["docker", "compose", "up", "-d", "--wait", "db"], cwd=ROOT, check=True)
 
 from sqlalchemy import select
 
