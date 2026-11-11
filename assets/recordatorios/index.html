@@ -48,7 +48,6 @@
             <option value="days">Cada X días</option>
             <option value="hours">Cada X horas</option>
             <option value="min">Cada X minutos</option>
-            <option value="sec">Cada X segundos</option>
             <option value="custom">Cron avanzado</option>
           </select>
         </label>
@@ -64,10 +63,10 @@
         <div class="two">
           <label data-k="once">Fecha <input id="f-date" type="date" required></label>
           <label data-k="once daily weekdays days">Hora <input id="f-time" type="time" required></label>
-          <label data-k="days hours min sec">Cada <input id="f-n" type="number" min="1" max="59" value="1" required></label>
+          <label data-k="days hours min">Cada <input id="f-n" type="number" min="1" max="59" value="1" required></label>
         </div>
-        <label data-k="custom">Cron (seg min hora díaMes mes díaSemana)
-          <input id="f-cron" placeholder="0 0 9 * * 1-5" autocomplete="off" required>
+        <label data-k="custom">Cron (min hora díaMes mes díaSemana)
+          <input id="f-cron" placeholder="0 9 * * 1-5" autocomplete="off" required>
         </label>
         <div class="chips">
           <button type="button" data-in="60">En 1 hora</button>

@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
+from . import crontab
 from .database import engine
 from .models import reminders
 from .schemas import ReminderCreate, ReminderPatch
@@ -20,7 +21,7 @@ def _out(row) -> dict[str, Any]:
     d = dict(row._mapping)
     try:
         base = datetime.now(ZoneInfo(d["timezone"]))
-        d["next_run"] = croniter(d["schedule"], base, second_at_beginning=True).get_next(datetime).isoformat()
+        d["next_run"] = croniter(d["schedule"], base).get_next(datetime).isoformat()
     except Exception:
         d["next_run"] = None
     return d
@@ -66,6 +67,7 @@ def create_reminder(reminder: ReminderCreate) -> dict[str, Any]:
         row = connection.execute(
             insert(reminders).values(**reminder.model_dump()).returning(reminders)
         ).one()
+        crontab.sync(connection)
     return _out(row)
 
 
@@ -78,6 +80,8 @@ def update_reminder(reminder_id: int, reminder: ReminderPatch) -> dict[str, Any]
         row = connection.execute(
             update(reminders).where(reminders.c.id == reminder_id).values(**changes).returning(reminders)
         ).first()
+        if row is not None:
+            crontab.sync(connection)
     if row is None:
         raise not_found()
     return _out(row)
@@ -87,5 +91,6 @@ def update_reminder(reminder_id: int, reminder: ReminderPatch) -> dict[str, Any]
 def delete_reminder(reminder_id: int) -> None:
     with engine.begin() as connection:
         result = connection.execute(delete(reminders).where(reminders.c.id == reminder_id))
+        crontab.sync(connection)
     if result.rowcount == 0:
         raise not_found()

@@ -5,8 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _check_cron(v: str | None) -> str | None:
-    if v is not None and (len(v.split()) != 6 or not croniter.is_valid(v, second_at_beginning=True)):
-        raise ValueError("schedule debe ser cron de 6 campos: seg min hora díaMes mes díaSemana")
+    if v is not None and (len(v.split()) != 5 or not croniter.is_valid(v)):
+        raise ValueError("schedule debe ser cron de 5 campos: min hora díaMes mes díaSemana")
     return v
 
 class ReminderCreate(BaseModel):

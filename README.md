@@ -30,6 +30,13 @@ listar, crear, editar, completar y borrar recordatorios. Requiere la API en marc
 ./mostrar-recordatorios.sh
 ```
 
+## Cronjobs
+
+Cada recordatorio `pending` se instala en el `crontab` del usuario (líneas con el
+marcador `# ulu-reminder`), que ejecuta `recordar.py <id>` y muestra la mascota con
+título y descripción. La API resincroniza el crontab al crear, editar o borrar, y al
+arrancar. Requiere Postgres arriba al disparar.
+
 ## Agente de ejemplo
 
 El directorio `agent/` contiene un agente pequeño con Google ADK y LiteLLM. Lee
