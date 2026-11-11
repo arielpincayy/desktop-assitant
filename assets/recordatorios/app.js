@@ -5,7 +5,7 @@ const now = new Date();
 const at = (dayOff, h, m) => { const d = new Date(now); d.setDate(d.getDate() + dayOff); d.setHours(h, m, 0, 0); return d; };
 const iso = (d) => new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
 
-let items = [], editing = null, trashed = null, toastTimer, showDone = false;
+let items = [], editing = null, trashed = null, toastTimer, showDone = false, showAnn = false;
 
 async function api(method, path, body) {
   try {
@@ -22,7 +22,7 @@ async function api(method, path, body) {
 }
 async function load() {
   const rows = await api("GET", "/reminders?user_id=" + encodeURIComponent(USER) + "&limit=500");
-  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.next_run), done: r.status === "done" }));
+  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced" }));
   render();
 }
 const save = (method, path, body) => api(method, path, body).then(load).catch(() => {});
@@ -52,15 +52,16 @@ function row(r) {
 
 function render() {
   const sorted = [...items].sort((a, b) => a.when - b.when);
-  const open = sorted.filter((r) => !r.done), done = sorted.filter((r) => r.done);
+  const open = sorted.filter((r) => !r.done && !r.ann), done = sorted.filter((r) => r.done), ann = sorted.filter((r) => r.ann && !r.done);
   let html = "", last = "";
   for (const r of open) {
     const l = dayLabel(r.when);
     if (l !== last) { html += `<div class="day">${l}</div>`; last = l; }
     html += row(r);
   }
-  if (!items.length) html = `<div class="empty"><img src="../fantasmita.svg" alt=""><p>No tienes recordatorios.<br>Escribe el primero arriba.</p></div>`;
+  if (!open.length && !done.length && !ann.length) html = `<div class="empty"><img src="../fantasmita.svg" alt=""><p>No tienes recordatorios.<br>Escribe el primero arriba.</p></div>`;
   if (done.length) html += `<button class="fold" id="fold">${showDone ? "▾" : "▸"} Hechos (${done.length})</button>` + (showDone ? done.map(row).join("") : "");
+  if (ann.length) html += `<button class="fold" id="fold-ann">${showAnn ? "▾" : "▸"} Anunciados (${ann.length})</button>` + (showAnn ? ann.map(row).join("") : "");
   $("list").innerHTML = html;
 }
 
@@ -118,6 +119,7 @@ $("form").onsubmit = (e) => {
 
 $("list").onclick = (e) => {
   if (e.target.id === "fold") { showDone = !showDone; return render(); }
+  if (e.target.id === "fold-ann") { showAnn = !showAnn; return render(); }
   const el = e.target.closest(".row"); if (!el) return;
   const r = items.find((x) => x.id == el.dataset.id);
   if (e.target.type === "checkbox") save("PATCH", "/reminders/" + r.id, { status: e.target.checked ? "done" : "pending" });

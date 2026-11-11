@@ -41,7 +41,7 @@ def _request(method: str, path: str, **kwargs: Any) -> Any:
 def list_reminders(status: str | None = None) -> Any:
     """Lista los recordatorios del usuario actual.
 
-    status: filtro opcional, "pending" (por hacer) o "done" (completado). Sin filtro devuelve todos.
+    status: filtro opcional, "pending" (por hacer), "announced" (ya anunciado) o "done" (completado). Sin filtro devuelve todos.
     Úsala también para encontrar el id de un recordatorio cuando el usuario no lo da.
     """
     params: dict[str, str] = {"user_id": CONFIG.USER_ID}
@@ -66,11 +66,10 @@ def create_reminder(
 ) -> Any:
     """Crea un recordatorio para el usuario actual (queda en estado "pending").
 
-    schedule: cron de 6 campos "seg min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
-    Ejemplos: una vez el 10-nov a las 17:00 "0 0 17 10 11 *"; cada día 09:00 "0 0 9 * * *";
-    lunes a viernes 08:30 "0 30 8 * * 1-5"; cada 2 horas "0 0 */2 * * *"; cada 15 min "0 */15 * * * *";
-    cada 30 s "*/30 * * * * *". Para recordatorios de una sola vez usa fecha concreta (no repite
-    este año) y el ejecutor lo marca "done" al dispararse.
+    schedule: cron de 5 campos "min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
+    Ejemplos: una vez el 10-nov a las 17:00 "0 17 10 11 *"; cada día 09:00 "0 9 * * *";
+    lunes a viernes 08:30 "30 8 * * 1-5"; cada 2 horas "0 */2 * * *"; cada 15 min "*/15 * * * *".
+    Para recordatorios de una sola vez usa fecha concreta; al dispararse pasa a "announced".
     timezone: nombre IANA, p. ej. "America/Guayaquil".
     """
     return _request(
@@ -96,11 +95,10 @@ def update_reminder(
 ) -> Any:
     """Edita solo los campos indicados de un recordatorio propio.
 
-    schedule: (opcional) cron de 6 campos "seg min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
-    Ejemplos: una vez el 10-nov a las 17:00 "0 0 17 10 11 *"; cada día 09:00 "0 0 9 * * *";
-    lunes a viernes 08:30 "0 30 8 * * 1-5"; cada 2 horas "0 0 */2 * * *"; cada 15 min "0 */15 * * * *";
-    cada 30 s "*/30 * * * * *". Para recordatorios de una sola vez usa fecha concreta (no repite
-    este año) y el ejecutor lo marca "done" al dispararse.
+    schedule: (opcional) cron de 5 campos "min hora díaMes mes díaSemana" (0=domingo) en hora local de `timezone`.
+    Ejemplos: una vez el 10-nov a las 17:00 "0 17 10 11 *"; cada día 09:00 "0 9 * * *";
+    lunes a viernes 08:30 "30 8 * * 1-5"; cada 2 horas "0 */2 * * *"; cada 15 min "*/15 * * * *".
+    Para recordatorios de una sola vez usa fecha concreta; al dispararse pasa a "announced".
     status: "pending" o "done" (usa "done" para marcarlo como completado).
     """
     current = get_reminder(reminder_id)

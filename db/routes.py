@@ -7,7 +7,7 @@ from .database import engine
 from .models import reminders
 from .schemas import ReminderCreate, ReminderPatch
 from sqlalchemy import delete, insert, select, update
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -64,6 +64,10 @@ def get_reminder(reminder_id: int) -> dict[str, Any]:
 @router.post("", status_code=201)
 def create_reminder(reminder: ReminderCreate) -> dict[str, Any]:
     with engine.begin() as connection:
+        # Borrado perezoso: anunciados con más de 5 días.
+        # ponytail: compara texto; vale porque recordar.py guarda notified_at como ISO UTC.
+        limit = (datetime.now(timezone.utc) - timedelta(days=5)).isoformat()
+        connection.execute(delete(reminders).where(reminders.c.status == "announced", reminders.c.notified_at < limit))
         row = connection.execute(
             insert(reminders).values(**reminder.model_dump()).returning(reminders)
         ).one()

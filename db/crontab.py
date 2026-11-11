@@ -17,6 +17,12 @@ def to_line(reminder_id: int, schedule: str) -> str:
     return f"{schedule} cd '{ROOT}' && .venv/bin/python recordar.py {reminder_id} {MARK}"
 
 
+def is_once(schedule: str) -> bool:
+    """Cron de una sola ocurrencia al año (min hora díaMes mes numéricos, díaSemana *)."""
+    f = schedule.split()
+    return len(f) == 5 and all(x.isdigit() for x in f[:4]) and f[4] == "*"
+
+
 def missed(schedule: str, tz: str, since: datetime, now: datetime) -> datetime | None:
     """Última ocurrencia del cron posterior a `since` (y <= now), o None. Solo la última: no acumula."""
     prev = croniter(schedule, now.astimezone(ZoneInfo(tz))).get_prev(datetime)

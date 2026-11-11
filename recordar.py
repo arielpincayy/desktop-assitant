@@ -23,7 +23,7 @@ subprocess.run(["docker", "compose", "up", "-d", "--wait", "db"], cwd=ROOT, chec
 
 from sqlalchemy import select, update
 
-from db.crontab import missed
+from db.crontab import is_once, missed, sync
 from db.database import engine
 from db.models import reminders
 
@@ -32,8 +32,13 @@ SCRIPT = str(ROOT / "mostrar-mascota.sh")
 
 def show(r, prefix: str = "") -> None:
     """Marca el recordatorio como anunciado y bloquea hasta que se cierra la mascota."""
+    changes = {"notified_at": datetime.now(timezone.utc).isoformat()}
+    if is_once(r.schedule):
+        changes["status"] = "announced"  # no se repite: sale del crontab y de la lista principal
     with engine.begin() as c:
-        c.execute(update(reminders).where(reminders.c.id == r.id).values(notified_at=datetime.now(timezone.utc).isoformat()))
+        c.execute(update(reminders).where(reminders.c.id == r.id).values(**changes))
+        if "status" in changes:
+            sync(c)
     msg = prefix + (f"{r.title}\n{r.description}" if r.description else r.title)
     subprocess.run([SCRIPT, "--mensaje", msg])
 

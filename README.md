@@ -41,6 +41,10 @@ Si la PC estaba apagada a la hora de un recordatorio, al iniciar sesión se mues
 los perdidos de uno en uno (`recordar.py --pendientes`; el autostart lo crea
 `./instalar-ulu.sh`). Un recurrente perdido varias veces se anuncia una sola vez.
 
+Los recordatorios de «una vez» pasan a `announced` al anunciarse: salen del crontab y
+de la lista principal (sección «Anunciados») y se borran de la DB 5 días después, al
+crear el siguiente recordatorio.
+
 ## Agente de ejemplo
 
 El directorio `agent/` contiene un agente pequeño con Google ADK y LiteLLM. Lee
