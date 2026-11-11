@@ -9,14 +9,20 @@ import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("WebKit2", "4.1")
-from gi.repository import Gtk, WebKit2
+from gi.repository import GLib, Gtk, WebKit2
 
 import CONFIG
 
 HTML = Path(__file__).resolve().parent / "assets" / "recordatorios" / "index.html"
 API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001").rstrip("/")
 
-win = Gtk.Window(title="Recordatorios")
+# prgname = nombre de ulu.desktop: así el dock/Wayland asocia la ventana al icono
+GLib.set_prgname("ulu")
+GLib.set_application_name("ULU")
+ICON = Path(__file__).resolve().parent / "assets" / "fantasmita.svg"
+Gtk.Window.set_default_icon_from_file(str(ICON))
+
+win = Gtk.Window(title="ULU")
 win.set_default_size(440, 680)
 win.connect("destroy", Gtk.main_quit)
 

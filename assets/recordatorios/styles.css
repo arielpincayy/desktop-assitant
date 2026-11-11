@@ -129,15 +129,29 @@ dialog input[type=checkbox] { display: inline; width: auto; margin: 0; }
 .primary { background: var(--ghost-deep); color: #fff; }
 @media (prefers-color-scheme: dark) { .primary { color: #08111f; } }
 
-.actions .ulu { margin-right: auto; padding-left: 0; color: var(--ghost-deep); }
+.ulu {
+  margin: 4px 16px 0; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 700;
+  border: 1px solid var(--line); background: none; color: var(--ghost-deep);
+}
+.ulu:hover { border-color: var(--ghost); }
 #chat[open] { display: flex; flex-direction: column; height: 75%; }
 .chat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .chat-head h2 { margin: 0; flex: 1; }
 .chat-head .x { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); }
-.chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
-.msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--paper); border: 1px solid var(--line); }
-.msg.me { align-self: flex-end; background: var(--ghost-deep); border-color: transparent; color: #fff; }
+.chat-log { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
+.msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; overflow-wrap: anywhere; background: var(--paper); border: 1px solid var(--line); }
+.msg.me { white-space: pre-wrap; align-self: flex-end; background: var(--ghost-deep); border-color: transparent; color: #fff; }
 @media (prefers-color-scheme: dark) { .msg.me { color: #08111f; } }
+.msg > :first-child { margin-top: 0; } .msg > :last-child { margin-bottom: 0; }
+.msg p, .msg ul, .msg ol, .msg table, .msg pre { margin: 0 0 8px; }
+.msg ul, .msg ol { padding-left: 20px; }
+.msg h4 { margin: 0 0 6px; font-family: "Bricolage Grotesque", sans-serif; }
+.msg code { padding: 1px 4px; border-radius: 4px; background: var(--line); font-size: 12.5px; }
+.msg pre { padding: 8px; border-radius: 8px; background: var(--line); white-space: pre-wrap; }
+.msg pre code { padding: 0; background: none; }
+.msg table { border-collapse: collapse; font-size: 13px; max-width: 100%; }
+.msg th, .msg td { padding: 4px 8px; border: 1px solid var(--line); text-align: left; }
+.msg th { background: var(--line); }
 .msg.wait { color: var(--muted); font-style: italic; }
 .msg.err { color: var(--alarm); }
 .chat-form { display: flex; gap: 8px; }

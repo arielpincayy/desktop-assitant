@@ -131,8 +131,8 @@ $("list").onclick = (e) => {
 
 // Chat con ULU: POST /chat; después se recarga la lista por si ULU cambió algo.
 $("ulu-open").onclick = () => {
-  const t = $("f-title").value.trim();
-  $("dlg").close();
+  const t = $("quick-input").value.trim();
+  $("quick-input").value = "";
   $("chat").show();
   if (t && !$("chat-input").value) $("chat-input").value = t;
   $("chat-input").focus();
@@ -141,7 +141,8 @@ $("chat-close").onclick = () => $("chat").close();
 $("chat").onkeydown = (e) => { if (e.key === "Escape") $("chat").close(); };
 function bubble(cls, text) {
   const b = document.createElement("div");
-  b.className = "msg " + cls; b.textContent = text;
+  b.className = "msg " + cls;
+  b.textContent = text;
   $("chat-log").append(b); b.scrollIntoView({ block: "end" });
   return b;
 }
@@ -157,7 +158,7 @@ $("chat-form").onsubmit = async (e) => {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }),
     });
     if (!res.ok) throw new Error(res.status);
-    wait.className = "msg"; wait.textContent = (await res.json()).reply;
+    wait.className = "msg"; wait.innerHTML = Md.render((await res.json()).reply);
     load().catch(() => {});
   } catch {
     wait.className = "msg err"; wait.textContent = "No pude hablar con ULU. ¿Está corriendo main.py?";
