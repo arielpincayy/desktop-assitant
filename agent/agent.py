@@ -32,7 +32,7 @@ class Agent:
     def create_agent(self) -> LlmAgent:
         return LlmAgent(
             name=self.name,
-            model=LiteLlm(model=self.model),
+            model=LiteLlm(model=self.model, extra_body={"thinking": {"type": "disabled"}}),
             instruction=self._instruction,
             tools=REMINDER_TOOLS,
         )

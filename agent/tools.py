@@ -45,7 +45,8 @@ def list_reminders(status: str | None = None) -> Any:
     Úsala también para encontrar el id de un recordatorio cuando el usuario no lo da.
     """
     params: dict[str, str] = {"user_id": CONFIG.USER_ID}
-    if status:
+    # Sin razonamiento el modelo manda "null"/"none" como texto: solo estos valores filtran.
+    if status in ("pending", "announced", "done"):
         params["status"] = status
     return _request("GET", "/reminders", params=params)
 
