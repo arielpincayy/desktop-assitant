@@ -11,5 +11,15 @@ services:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?define SEARXNG_SECRET en .env}
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+    restart: unless-stopped
+
 volumes:
   pg_data:

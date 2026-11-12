@@ -1,0 +1,5 @@
+use_default_settings: true
+search:
+  formats: [html, json]   # json es lo que consume litellm; viene desactivado (403)
+server:
+  limiter: false          # uso local; el secret_key llega por SEARXNG_SECRET
