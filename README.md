@@ -72,7 +72,8 @@ editando `QUESTION` en `agent/main.py`.
 
 ## API de recordatorios
 
-PostgreSQL corre en Docker (`db`, volumen `pg_data`, solo en `127.0.0.1:5434`);
+PostgreSQL corre en Docker (`db`, volumen `pg_data`, red interna
+`172.31.255.240/28`, solo en `127.0.0.1:5434`);
 la API corre en el venv del proyecto. Define `POSTGRES_PASSWORD` en `.env`
 (ver `.env.example`). La API crea la tabla `reminders` con SQLAlchemy
 (`metadata.create_all`) al iniciar y escucha en `http://localhost:8001`.

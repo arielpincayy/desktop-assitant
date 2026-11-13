@@ -9,6 +9,12 @@ services:
       - "127.0.0.1:5434:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
     restart: unless-stopped
 
   searxng:
@@ -23,3 +29,9 @@ services:
 
 volumes:
   pg_data:
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.31.255.240/28
