@@ -3,6 +3,7 @@
 import os
 from typing import Any
 
+import litellm
 import requests
 
 import CONFIG
@@ -49,6 +50,23 @@ def list_reminders(status: str | None = None) -> Any:
     if status in ("pending", "announced", "done"):
         params["status"] = status
     return _request("GET", "/reminders", params=params)
+
+
+def web_search(query: str) -> Any:
+    """Busca en la web (SearXNG) y devuelve hasta 5 resultados con título, url y fragmento.
+
+    Úsala solo cuando el usuario pida información externa actual (precios, noticias, clima, datos).
+    No lee el contenido completo de las páginas: solo los fragmentos.
+    """
+    try:
+        results = litellm.search(
+            query=query, search_provider="searxng", max_results=5
+        ).results
+    except Exception as exc:
+        return {"error": f"Falló la búsqueda web: {exc}"}
+    return [
+        {"title": r.title, "url": r.url, "snippet": r.snippet} for r in results[:5]
+    ]
 
 
 def get_reminder(reminder_id: int) -> Any:
@@ -135,4 +153,5 @@ REMINDER_TOOLS = [
     create_reminder,
     update_reminder,
     delete_reminder,
+    web_search,
 ]

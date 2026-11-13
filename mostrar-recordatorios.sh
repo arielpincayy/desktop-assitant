@@ -18,6 +18,7 @@ healthy() { curl -fs -m 2 "$API/health" >/dev/null 2>&1; }
 if ! healthy; then
   # La API la crea si falta: primero la base de datos.
   docker compose up -d --wait db >>"$LOG" 2>&1 || fail "No se pudo iniciar el contenedor de la base de datos (ver $LOG)."
+  docker compose up -d searxng >>"$LOG" 2>&1 || true  # la búsqueda web es opcional
   nohup .venv/bin/python main.py >>"$LOG" 2>&1 &
   pid=$!
   for _ in $(seq 40); do
