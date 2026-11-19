@@ -10,6 +10,8 @@ reminders = Table(
     Column("user_id", Text, nullable=False),
     Column("title", Text, nullable=False),
     Column("description", Text),
+    # Orden que ejecuta el agente cuando action="agent" (se conserva aparte de description)
+    Column("instruction", Text),
     # NULL = solo aviso; "agent" = actúa el LLM; "command" = ejecuta comandos.command
     Column("action", Text),
     # Cron de 5 campos: "min hora díaMes mes díaSemana"

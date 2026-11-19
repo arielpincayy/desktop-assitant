@@ -20,6 +20,7 @@ class ReminderCreate(BaseModel):
     user_id: str = Field(min_length=1)
     title: str = Field(min_length=1)
     description: str | None = None
+    instruction: str | None = None
     action: Literal["agent", "command"] | None = None
     command: str | None = None
     schedule: str = Field(min_length=1)
@@ -29,6 +30,7 @@ class ReminderCreate(BaseModel):
 
     _v = field_validator("schedule")(_check_cron)
     _c = field_validator("command")(_strip)
+    _i = field_validator("instruction")(_strip)
 
     @model_validator(mode="after")
     def _check_action(self) -> "ReminderCreate":
@@ -43,6 +45,7 @@ class ReminderPatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str | None = None
     description: str | None = None
+    instruction: str | None = None
     action: Literal["agent", "command"] | None = None
     command: str | None = None
     schedule: str | None = None
@@ -52,3 +55,4 @@ class ReminderPatch(BaseModel):
 
     _v = field_validator("schedule")(_check_cron)
     _c = field_validator("command")(_strip)
+    _i = field_validator("instruction")(_strip)
