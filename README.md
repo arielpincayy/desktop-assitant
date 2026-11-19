@@ -45,6 +45,25 @@ Los recordatorios de «una vez» pasan a `announced` al anunciarse: salen del cr
 de la lista principal (sección «Anunciados») y se borran de la DB 5 días después, al
 crear el siguiente recordatorio.
 
+## Acciones de los recordatorios
+
+Cada recordatorio tiene un campo `action`:
+
+- `NULL` (sin acción): la mascota muestra el título y la descripción.
+- `agent`: al dispararse, ULU usa el título y la descripción como instrucción, ejecuta
+  la acción con sus herramientas y muestra la respuesta.
+- `command`: el comando guardado en la tabla `comandos` se ejecuta con `/bin/sh` al
+  dispararse; la mascota muestra su salida (stdout y stderr). Tiene un timeout de 30 s.
+
+Puedes elegir la acción en la ventana de recordatorios o pedírselo a ULU por chat.
+Los comandos se ejecutan con los permisos del usuario y sin confirmación; se usa el
+entorno de cron, así que emplea rutas absolutas si el comando no está en `PATH`.
+La API escucha solo en `localhost`: no la expongas fuera de la máquina. El agente solo
+crea recordatorios con `action='command'` cuando el usuario lo pide explícitamente.
+
+La columna `action` se añade a las bases existentes al arrancar la API
+(`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`), así que reinicia `main.py` tras actualizar.
+
 ## Agente de ejemplo
 
 El directorio `agent/` contiene un agente pequeño con Google ADK y LiteLLM. Lee
@@ -75,8 +94,8 @@ editando `QUESTION` en `agent/main.py`.
 PostgreSQL corre en Docker (`db`, volumen `pg_data`, red interna
 `172.31.255.240/28`, solo en `127.0.0.1:5434`);
 la API corre en el venv del proyecto. Define `POSTGRES_PASSWORD` en `.env`
-(ver `.env.example`). La API crea la tabla `reminders` con SQLAlchemy
-(`metadata.create_all`) al iniciar y escucha en `http://localhost:8001`.
+(ver `.env.example`). La API crea las tablas `reminders` y `comandos` con
+SQLAlchemy (`metadata.create_all`) al iniciar y escucha en `http://localhost:8001`.
 
 ```sh
 docker compose up -d

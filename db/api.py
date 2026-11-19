@@ -12,6 +12,10 @@ from .routes import router
 async def lifespan(_app: FastAPI):
     reminders.metadata.create_all(engine)
     with engine.begin() as connection:
+        # migración única: añade action a bases existentes
+        connection.execute(text(
+            "ALTER TABLE reminders ADD COLUMN IF NOT EXISTS action TEXT"
+        ))
         # migración única: quita los segundos de los cron antiguos de 6 campos
         connection.execute(text(
             r"UPDATE reminders SET schedule = regexp_replace(trim(schedule), '^\S+\s+', '') "

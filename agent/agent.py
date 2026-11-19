@@ -11,6 +11,8 @@ from google.genai import types
 import CONFIG
 from agent.tools import REMINDER_TOOLS
 
+ULU_INSTRUCTION = "Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español."
+
 class Agent:
     def __init__(self, name: str, instruction: str):
         self.name = name
@@ -22,8 +24,11 @@ class Agent:
         now = datetime.now(ZoneInfo("America/Guayaquil")).strftime("%Y-%m-%d %H:%M (%A)")
         return (
             f"{self.instruction} Fecha y hora actual: {now}, zona America/Guayaquil; "
-            "úsala para convertir lo que pida el usuario (fechas relativas, repeticiones) a una expresión cron de 6 campos con segundos primero. "
+            "úsala para convertir lo que pida el usuario (fechas relativas, repeticiones) a una expresión cron de 5 campos: min hora díaMes mes díaSemana. "
             "Usa las herramientas para consultar y gestionar recordatorios. "
+            "Si el usuario pide que al dispararse se ejecute un comando, usa action='command' y command con el comando exacto. "
+            "Si pide que tú investigues o hagas algo al dispararse, usa action='agent' y pon la instrucción en description. "
+            "Sin acción, action=null. "
             "Si el usuario no da el id, usa list_reminders para encontrarlo y pregunta si hay varias coincidencias. "
             "Solo opera sobre el usuario actual; elimina un recordatorio "
             "únicamente cuando el usuario lo solicite claramente."

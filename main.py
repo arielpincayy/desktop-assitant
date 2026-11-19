@@ -12,7 +12,7 @@ load_dotenv(".env")  # antes de importar db: db/config.py lee POSTGRES_PASSWORD 
 import uvicorn
 from pydantic import BaseModel, Field
 
-from agent.agent import Agent
+from agent.agent import Agent, ULU_INSTRUCTION
 from db.api import app
 
 API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001")
@@ -23,10 +23,7 @@ API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001")
 loop = asyncio.new_event_loop()
 threading.Thread(target=loop.run_forever, daemon=True).start()
 runner = asyncio.run_coroutine_threadsafe(
-    Agent(
-        name="ulu",
-        instruction="Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español.",
-    ).initialize(),
+    Agent(name="ulu", instruction=ULU_INSTRUCTION).initialize(),
     loop,
 ).result()
 

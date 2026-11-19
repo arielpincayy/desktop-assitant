@@ -23,11 +23,25 @@ subprocess.run(["docker", "compose", "up", "-d", "--wait", "db"], cwd=ROOT, chec
 
 from sqlalchemy import select, update
 
+from acciones import ask_agent, run_command
 from db.crontab import is_once, missed, sync
 from db.database import engine
-from db.models import reminders
+from db.models import comandos, reminders
 
 SCRIPT = str(ROOT / "mostrar-mascota.sh")
+
+
+def _action_output(r) -> str:
+    if r.action == "command":
+        with engine.connect() as c:
+            command = c.execute(
+                select(comandos.c.command).where(comandos.c.reminder_id == r.id)
+            ).scalar()
+        return run_command(command) if command else "No hay comando configurado para este recordatorio."
+    if r.action == "agent":
+        prompt = f"{r.title}\n{r.description}" if r.description else r.title
+        return ask_agent(prompt)
+    return ""
 
 
 def show(r, prefix: str = "") -> None:
@@ -40,6 +54,9 @@ def show(r, prefix: str = "") -> None:
         if "status" in changes:
             sync(c)
     msg = prefix + (f"{r.title}\n{r.description}" if r.description else r.title)
+    extra = _action_output(r)
+    if extra:
+        msg += f"\n\n{extra}"
     subprocess.run([SCRIPT, "--mensaje", msg])
 
 

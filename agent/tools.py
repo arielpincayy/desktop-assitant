@@ -82,6 +82,8 @@ def create_reminder(
     schedule: str,
     description: str | None = None,
     timezone: str = "America/Guayaquil",
+    action: str | None = None,
+    command: str | None = None,
 ) -> Any:
     """Crea un recordatorio para el usuario actual (queda en estado "pending").
 
@@ -90,7 +92,14 @@ def create_reminder(
     lunes a viernes 08:30 "30 8 * * 1-5"; cada 2 horas "0 */2 * * *"; cada 15 min "*/15 * * * *".
     Para recordatorios de una sola vez usa fecha concreta; al dispararse pasa a "announced".
     timezone: nombre IANA, p. ej. "America/Guayaquil".
+    action: None para solo avisar; "agent" para que ULU ejecute la descripción como instrucción al dispararse;
+    "command" para ejecutar `command` con el shell y mostrar su salida.
+    command: comando de shell a ejecutar cuando action="command".
     """
+    if isinstance(action, str):
+        action = action.strip().lower() or None
+    if action in ("none", "null"):
+        action = None
     return _request(
         "POST",
         "/reminders",
@@ -100,6 +109,8 @@ def create_reminder(
             "description": description,
             "schedule": schedule,
             "timezone": timezone,
+            "action": action,
+            "command": command,
         },
     )
 
@@ -111,6 +122,8 @@ def update_reminder(
     schedule: str | None = None,
     timezone: str | None = None,
     status: str | None = None,
+    action: str | None = None,
+    command: str | None = None,
 ) -> Any:
     """Edita solo los campos indicados de un recordatorio propio.
 
@@ -119,6 +132,8 @@ def update_reminder(
     lunes a viernes 08:30 "30 8 * * 1-5"; cada 2 horas "0 */2 * * *"; cada 15 min "*/15 * * * *".
     Para recordatorios de una sola vez usa fecha concreta; al dispararse pasa a "announced".
     status: "pending" o "done" (usa "done" para marcarlo como completado).
+    action: "agent", "command" o "none" para quitar la acción.
+    command: nuevo comando de shell cuando action="command".
     """
     current = get_reminder(reminder_id)
     if not isinstance(current, dict) or current.get("user_id") != CONFIG.USER_ID:
@@ -131,9 +146,16 @@ def update_reminder(
             "schedule": schedule,
             "timezone": timezone,
             "status": status,
+            "command": command,
         }.items()
         if value is not None
     }
+    if isinstance(action, str):
+        action = action.strip().lower() or None
+    if action in ("none", "null"):
+        changes["action"] = None
+    elif action is not None:
+        changes["action"] = action
     if not changes:
         return {"error": "Indica al menos un campo para actualizar."}
     return _request("PATCH", f"/reminders/{reminder_id}", json=changes)

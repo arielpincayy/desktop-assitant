@@ -22,7 +22,7 @@ async function api(method, path, body) {
 }
 async function load() {
   const rows = await api("GET", "/reminders?user_id=" + encodeURIComponent(USER) + "&limit=500");
-  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced", notified: r.notified_at, tz: r.timezone }));
+  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced", notified: r.notified_at, tz: r.timezone, action: r.action || "", command: r.command || "" }));
   render();
 }
 const save = (method, path, body) => api(method, path, body).then(load).catch(() => {});
@@ -74,11 +74,21 @@ function openForm(r, title = "") {
   $("save").textContent = r ? "Guardar cambios" : "Guardar recordatorio";
   $("f-title").value = r ? r.title : title;
   $("f-desc").value = r ? r.desc : "";
+  $("f-action").value = r ? r.action : "";
+  $("f-command").value = r ? r.command : "";
+  showAction();
   setWhen(r ? Cron.fromCron(r.schedule, r.when) : { kind: "once", ...dt(new Date(now.getTime() + 36e5)) });
   $("dlg").show(); // no modal: así queda dentro de .win y no de la pantalla
   $("f-title").focus();
 }
 const dt = (d) => ({ date: iso(d).slice(0, 10), time: iso(d).slice(11, 16) });
+function showAction() {
+  const action = $("f-action").value;
+  $("f-command-label").hidden = action !== "command";
+  $("f-command").disabled = action !== "command";
+  $("f-action-hint").hidden = action !== "agent";
+}
+$("f-action").onchange = showAction;
 const KINDS = () => $("dlg").querySelectorAll("[data-k]");
 function showKind() {
   const k = $("f-kind").value;
@@ -112,7 +122,10 @@ document.querySelector(".chips").onclick = (e) => {
 $("form").onsubmit = (e) => {
   const schedule = getSchedule();
   if (!schedule) { e.preventDefault(); return toast("Completa la repetición (p. ej. elige algún día)", false); }
-  const data = { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, schedule };
+  const action = $("f-action").value || null;
+  const command = action === "command" ? $("f-command").value.trim() : null;
+  if (action === "command" && !command) { e.preventDefault(); return toast("Escribe el comando a ejecutar", false); }
+  const data = { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, schedule, action, command };
   if (editing) save("PATCH", "/reminders/" + editing.id, data);
   else save("POST", "/reminders", { user_id: USER, ...data });
 };
@@ -176,7 +189,7 @@ $("close-toast").onclick = () => ($("toast").hidden = true);
 $("undo").onclick = () => {
   $("toast").hidden = true;
   const r = trashed; trashed = null;
-  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, timezone: r.tz, status: r.ann ? "announced" : r.done ? "done" : "pending", notified_at: r.notified });
+  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, timezone: r.tz, status: r.ann ? "announced" : r.done ? "done" : "pending", notified_at: r.notified, action: r.action || null, command: r.command || null });
 };
 
 load().catch(() => {});

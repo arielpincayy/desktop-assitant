@@ -40,6 +40,17 @@
         <label>Descripción
           <textarea id="f-desc" rows="3" maxlength="300"></textarea>
         </label>
+        <label>Acción
+          <select id="f-action">
+            <option value="">Ninguna</option>
+            <option value="agent">Agente</option>
+            <option value="command">Comando</option>
+          </select>
+        </label>
+        <p id="f-action-hint" class="hint" hidden>La descripción será la instrucción que ULU ejecute al dispararse.</p>
+        <label id="f-command-label" hidden>Comando (se ejecuta al dispararse)
+          <textarea id="f-command" rows="2" placeholder="p. ej. df -h | tail -1"></textarea>
+        </label>
         <label>Repetir
           <select id="f-kind">
             <option value="once">Una vez</option>
