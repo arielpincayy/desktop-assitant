@@ -22,6 +22,8 @@ No testing framework or coverage requirement is configured. Add automated tests 
 
 ## Commit & Pull Request Guidelines
 
+Never add Claude (or any AI) as author or co-author: no `Co-Authored-By` trailers in commits and no “Generated with Claude Code” lines in PR descriptions.
+
 Git history is unavailable in this checkout, so no existing commit convention can be confirmed. Use short, imperative commit subjects, optionally with a scope (for example, `docs: add setup guide`). Pull requests should explain the change and its motivation, list validation performed, link related issues when applicable, and include screenshots for visible UI changes.
 
 ## Security & Configuration
