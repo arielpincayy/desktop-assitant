@@ -84,6 +84,7 @@ def create_reminder(
     timezone: str = "America/Guayaquil",
     action: str | None = None,
     command: str | None = None,
+    instruction: str | None = None,
 ) -> Any:
     """Crea un recordatorio para el usuario actual (queda en estado "pending").
 
@@ -92,9 +93,10 @@ def create_reminder(
     lunes a viernes 08:30 "30 8 * * 1-5"; cada 2 horas "0 */2 * * *"; cada 15 min "*/15 * * * *".
     Para recordatorios de una sola vez usa fecha concreta; al dispararse pasa a "announced".
     timezone: nombre IANA, p. ej. "America/Guayaquil".
-    action: None para solo avisar; "agent" para que ULU ejecute la descripción como instrucción al dispararse;
+    action: None para solo avisar; "agent" para que ULU ejecute `instruction` al dispararse;
     "command" para ejecutar `command` con el shell y mostrar su salida.
     command: comando de shell a ejecutar cuando action="command".
+    instruction: orden que ejecuta el agente cuando action="agent".
     """
     if isinstance(action, str):
         action = action.strip().lower() or None
@@ -111,6 +113,7 @@ def create_reminder(
             "timezone": timezone,
             "action": action,
             "command": command,
+            "instruction": instruction,
         },
     )
 
@@ -124,6 +127,7 @@ def update_reminder(
     status: str | None = None,
     action: str | None = None,
     command: str | None = None,
+    instruction: str | None = None,
 ) -> Any:
     """Edita solo los campos indicados de un recordatorio propio.
 
@@ -134,6 +138,7 @@ def update_reminder(
     status: "pending" o "done" (usa "done" para marcarlo como completado).
     action: "agent", "command" o "none" para quitar la acción.
     command: nuevo comando de shell cuando action="command".
+    instruction: nueva orden del agente cuando action="agent".
     """
     current = get_reminder(reminder_id)
     if not isinstance(current, dict) or current.get("user_id") != CONFIG.USER_ID:
@@ -147,6 +152,7 @@ def update_reminder(
             "timezone": timezone,
             "status": status,
             "command": command,
+            "instruction": instruction,
         }.items()
         if value is not None
     }

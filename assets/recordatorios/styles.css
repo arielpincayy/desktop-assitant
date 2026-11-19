@@ -49,11 +49,7 @@ h1, h2, .time { font-family: "Bricolage Grotesque", sans-serif; }
 h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
 
 .quick { padding: 8px 16px 4px; }
-.quick input {
-  width: 100%; padding: 10px 12px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--raise);
-}
-.quick input::placeholder { color: var(--muted); }
+.quick button { width: 100%; padding: 10px 12px; border-radius: 8px; font-weight: 700; }
 
 .list { flex: 1; overflow-y: auto; padding: 4px 16px 16px; }
 .day { margin: 16px 0 4px; font-size: 12px; font-weight: 700; color: var(--muted); }

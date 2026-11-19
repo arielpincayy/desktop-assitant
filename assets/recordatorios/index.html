@@ -17,10 +17,9 @@
       <h1 id="today"></h1>
     </section>
 
-    <form id="quick" class="quick">
-      <label class="sr" for="quick-input">Nuevo recordatorio</label>
-      <input id="quick-input" placeholder="Escribe un recordatorio y pulsa Enter" autocomplete="off">
-    </form>
+    <div class="quick">
+      <button type="button" id="new" class="primary">+ Crear recordatorio</button>
+    </div>
     <button type="button" id="ulu-open" class="ulu">👻 Hablar con ULU</button>
 
     <div id="list" class="list"></div>
@@ -34,10 +33,10 @@
     <dialog id="dlg">
       <form id="form" method="dialog">
         <h2 id="dlg-title">Nuevo recordatorio</h2>
-        <label>Título
+        <label id="f-title-label">Título
           <input id="f-title" required maxlength="80" autocomplete="off">
         </label>
-        <label>Descripción
+        <label id="f-desc-label">Descripción
           <textarea id="f-desc" rows="3" maxlength="300"></textarea>
         </label>
         <label>Acción
@@ -47,7 +46,9 @@
             <option value="command">Comando</option>
           </select>
         </label>
-        <p id="f-action-hint" class="hint" hidden>La descripción será la instrucción que ULU ejecute al dispararse.</p>
+        <label id="f-instr-label" hidden>Orden para ULU (se ejecuta al dispararse)
+          <textarea id="f-instruction" rows="4" required></textarea>
+        </label>
         <label id="f-command-label" hidden>Comando (se ejecuta al dispararse)
           <textarea id="f-command" rows="2" placeholder="p. ej. df -h | tail -1"></textarea>
         </label>

@@ -39,7 +39,7 @@ def _action_output(r) -> str:
             ).scalar()
         return run_command(command) if command else "No hay comando configurado para este recordatorio."
     if r.action == "agent":
-        prompt = f"{r.title}\n{r.description}" if r.description else r.title
+        prompt = r.instruction or (f"{r.title}\n{r.description}" if r.description else r.title)
         return ask_agent(prompt)
     return ""
 
@@ -53,10 +53,13 @@ def show(r, prefix: str = "") -> None:
         c.execute(update(reminders).where(reminders.c.id == r.id).values(**changes))
         if "status" in changes:
             sync(c)
-    msg = prefix + (f"{r.title}\n{r.description}" if r.description else r.title)
     extra = _action_output(r)
-    if extra:
-        msg += f"\n\n{extra}"
+    if r.action == "agent":
+        msg = prefix + extra
+    else:
+        msg = prefix + (f"{r.title}\n{r.description}" if r.description else r.title)
+        if extra:
+            msg += f"\n\n{extra}"
     subprocess.run([SCRIPT, "--mensaje", msg])
 
 

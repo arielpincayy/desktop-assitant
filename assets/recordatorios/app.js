@@ -22,7 +22,7 @@ async function api(method, path, body) {
 }
 async function load() {
   const rows = await api("GET", "/reminders?user_id=" + encodeURIComponent(USER) + "&limit=500");
-  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced", notified: r.notified_at, tz: r.timezone, action: r.action || "", command: r.command || "" }));
+  items = rows.map((r) => ({ id: r.id, title: r.title, desc: r.description || "", schedule: r.schedule, when: new Date(r.status === "announced" ? r.notified_at : r.next_run), done: r.status === "done", ann: r.status === "announced", notified: r.notified_at, tz: r.timezone, action: r.action || "", command: r.command || "", instruction: r.instruction || "" }));
   render();
 }
 const save = (method, path, body) => api(method, path, body).then(load).catch(() => {});
@@ -59,23 +59,23 @@ function render() {
     if (l !== last) { html += `<div class="day">${l}</div>`; last = l; }
     html += row(r);
   }
-  if (!open.length && !done.length && !ann.length) html = `<div class="empty"><img src="../fantasmita.svg" alt=""><p>No tienes recordatorios.<br>Escribe el primero arriba.</p></div>`;
+  if (!open.length && !done.length && !ann.length) html = `<div class="empty"><img src="../fantasmita.svg" alt=""><p>No tienes recordatorios.<br>Crea el primero arriba.</p></div>`;
   if (done.length) html += `<button class="fold" id="fold">${showDone ? "▾" : "▸"} Hechos (${done.length})</button>` + (showDone ? done.map(row).join("") : "");
   if (ann.length) html += `<button class="fold" id="fold-ann">${showAnn ? "▾" : "▸"} Anunciados (${ann.length})</button>` + (showAnn ? ann.map(row).join("") : "");
   $("list").innerHTML = html;
 }
 
-// Crear rápido: Enter abre el formulario con el título ya escrito
-$("quick").onsubmit = (e) => { e.preventDefault(); openForm(null, $("quick-input").value.trim()); $("quick-input").value = ""; };
+$("new").onclick = () => openForm(null);
 
-function openForm(r, title = "") {
+function openForm(r) {
   editing = r;
   $("dlg-title").textContent = r ? "Editar recordatorio" : "Nuevo recordatorio";
   $("save").textContent = r ? "Guardar cambios" : "Guardar recordatorio";
-  $("f-title").value = r ? r.title : title;
+  $("f-title").value = r ? r.title : "";
   $("f-desc").value = r ? r.desc : "";
   $("f-action").value = r ? r.action : "";
   $("f-command").value = r ? r.command : "";
+  $("f-instruction").value = r ? r.instruction || (r.action === "agent" ? r.desc : "") : "";
   showAction();
   setWhen(r ? Cron.fromCron(r.schedule, r.when) : { kind: "once", ...dt(new Date(now.getTime() + 36e5)) });
   $("dlg").show(); // no modal: así queda dentro de .win y no de la pantalla
@@ -86,7 +86,10 @@ function showAction() {
   const action = $("f-action").value;
   $("f-command-label").hidden = action !== "command";
   $("f-command").disabled = action !== "command";
-  $("f-action-hint").hidden = action !== "agent";
+  const agent = action === "agent";
+  $("f-instr-label").hidden = !agent;
+  $("f-instruction").disabled = !agent;
+  $("f-desc-label").hidden = agent; $("f-desc").disabled = agent;
 }
 $("f-action").onchange = showAction;
 const KINDS = () => $("dlg").querySelectorAll("[data-k]");
@@ -125,7 +128,10 @@ $("form").onsubmit = (e) => {
   const action = $("f-action").value || null;
   const command = action === "command" ? $("f-command").value.trim() : null;
   if (action === "command" && !command) { e.preventDefault(); return toast("Escribe el comando a ejecutar", false); }
-  const data = { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, schedule, action, command };
+  const instruction = action === "agent" ? $("f-instruction").value.trim() : null;
+  const data = action === "agent"
+    ? { title: $("f-title").value.trim(), description: null, instruction, schedule, action, command }
+    : { title: $("f-title").value.trim(), description: $("f-desc").value.trim() || null, instruction: null, schedule, action, command };
   if (editing) save("PATCH", "/reminders/" + editing.id, data);
   else save("POST", "/reminders", { user_id: USER, ...data });
 };
@@ -146,10 +152,7 @@ $("list").onclick = (e) => {
 
 // Chat con ULU: POST /chat; después se recarga la lista por si ULU cambió algo.
 $("ulu-open").onclick = () => {
-  const t = $("quick-input").value.trim();
-  $("quick-input").value = "";
   $("chat").show();
-  if (t && !$("chat-input").value) $("chat-input").value = t;
   $("chat-input").focus();
 };
 $("chat-close").onclick = () => $("chat").close();
@@ -189,7 +192,7 @@ $("close-toast").onclick = () => ($("toast").hidden = true);
 $("undo").onclick = () => {
   $("toast").hidden = true;
   const r = trashed; trashed = null;
-  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, timezone: r.tz, status: r.ann ? "announced" : r.done ? "done" : "pending", notified_at: r.notified, action: r.action || null, command: r.command || null });
+  if (r) save("POST", "/reminders", { user_id: USER, title: r.title, description: r.desc || null, schedule: r.schedule, timezone: r.tz, status: r.ann ? "announced" : r.done ? "done" : "pending", notified_at: r.notified, action: r.action || null, command: r.command || null, instruction: r.instruction || null });
 };
 
 load().catch(() => {});
