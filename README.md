@@ -139,6 +139,33 @@ está en `http://localhost:8001/docs`. Para borrar la base y el volumen:
 docker compose down -v
 ```
 
+## Telegram
+
+Chat con ULU desde el móvil sin abrir puertos: el bot usa long polling. También
+reenvía a tu chat los recordatorios que anuncia la mascota.
+
+1. Habla con @BotFather en Telegram, crea un bot con `/newbot` y copia el token.
+2. Define en `.env` `TELEGRAM_BOT_TOKEN` y `TELEGRAM_ALLOWED_USER_ID`. Para obtener
+   tu id, deja el id vacío, arranca el bot y mándale cualquier mensaje: responderá
+   con tu id. Luego ponlo y reinicia el bot.
+3. Arráncalo (si ejecutaste `./instalar-ulu.sh`, arranca solo al iniciar sesión):
+
+   ```sh
+   ./ulu-telegram.sh
+   ```
+
+   El log está en `~/.local/state/ulu/telegram.log`.
+
+El bot ignora los mensajes de cualquier otro usuario y usa su propia sesión en
+memoria (se pierde al reiniciarlo). Al arrancar, `./ulu-telegram.sh` asegura
+Postgres y `main.py` con `./ulu-api.sh`, así que las tools funcionan sin abrir la
+ventana. Un error 409 en el log significa que hay otra instancia o un webhook.
+
+Con el bot configurado, los recordatorios se envían también a tu chat; pulsa
+`/start` al menos una vez para que Telegram permita escribirte. No lo compartas:
+tiene las mismas herramientas que ULU, incluidas `ask_opencode` (`--auto`) y los
+recordatorios con `action=command`, que ejecutan código en tu PC con tus permisos.
+
 ## Requisitos
 
 - Pop!_OS con COSMIC y sesión Wayland.

@@ -27,6 +27,7 @@ from acciones import ask_agent, run_command
 from db.crontab import is_once, missed, sync
 from db.database import engine
 from db.models import comandos, reminders
+from telegram_bot import send_telegram
 
 SCRIPT = str(ROOT / "mostrar-mascota.sh")
 
@@ -60,6 +61,7 @@ def show(r, prefix: str = "") -> None:
         msg = prefix + (f"{r.title}\n{r.description}" if r.description else r.title)
         if extra:
             msg += f"\n\n{extra}"
+    send_telegram(msg)  # best-effort: la mascota bloquea hasta que se cierre
     subprocess.run([SCRIPT, "--mensaje", msg])
 
 

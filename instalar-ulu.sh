@@ -29,3 +29,13 @@ Exec=$dir/.venv/bin/python $dir/recordar.py --pendientes
 Terminal=false
 EOF
 echo "Instalado: $auto/ulu-pendientes.desktop"
+
+# Al iniciar sesión: chat por Telegram (si está configurado en .env).
+cat > "$auto/ulu-telegram.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=ULU Telegram
+Exec=$dir/ulu-telegram.sh
+Terminal=false
+EOF
+echo "Instalado: $auto/ulu-telegram.desktop"
