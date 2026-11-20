@@ -1,6 +1,10 @@
 """Tools de Google ADK para operar sobre la API de reminders."""
 
+import json
 import os
+import shutil
+import subprocess
+from pathlib import Path
 from typing import Any
 
 import litellm
@@ -10,6 +14,9 @@ import CONFIG
 
 API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001").rstrip("/")
 TIMEOUT_SECONDS = 5
+OPENCODE_TIMEOUT = 300
+OPENCODE_MAX_OUTPUT = 8000
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def _request(method: str, path: str, **kwargs: Any) -> Any:
@@ -175,6 +182,91 @@ def delete_reminder(reminder_id: int) -> Any:
     return _request("DELETE", f"/reminders/{reminder_id}")
 
 
+def _opencode_bin() -> str | None:
+    fallback = Path.home() / ".opencode/bin/opencode"
+    return (
+        os.getenv("OPENCODE_BIN")
+        or shutil.which("opencode")
+        or (str(fallback) if fallback.is_file() else None)
+    )
+
+
+def _parse_opencode(stdout: str) -> tuple[str, str | None, str | None]:
+    texts: list[str] = []
+    session_id = None
+    error = None
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        session_id = event.get("sessionID") or session_id
+        if event.get("type") == "text":
+            text = (event.get("part") or {}).get("text")
+            if text:
+                texts.append(text)
+        elif event.get("type") == "error":
+            error = (event.get("error") or {}).get("message") or error
+    return "\n".join(texts).strip(), session_id, error
+
+
+def ask_opencode(
+    prompt: str,
+    directory: str | None = None,
+    session_id: str | None = None,
+    model: str | None = None,
+) -> Any:
+    """Delega una tarea al CLI de OpenCode (`opencode run`) y devuelve su respuesta final.
+
+    prompt: tarea completa y autónoma; OpenCode no puede preguntar durante la ejecución.
+    directory: proyecto donde trabajar; por defecto, este repo.
+    session_id: id "ses_..." devuelto por una llamada anterior para continuar esa conversación.
+    model: "provider/model" opcional; sin valor OpenCode usa su modelo configurado.
+    Ejecuta con --auto (sin confirmar permisos): puede editar archivos y lanzar comandos.
+    """
+    if not prompt.strip():
+        return {"error": "El prompt para OpenCode está vacío."}
+    binary = _opencode_bin()
+    if binary is None:
+        return {"error": "No se encontró el CLI de OpenCode; instálalo o define OPENCODE_BIN."}
+    cwd = Path(directory).expanduser() if directory else ROOT
+    if not cwd.is_dir():
+        return {"error": f"El directorio no existe: {cwd}"}
+    cmd = [binary, "run", "--format", "json", "--auto", "--archived"]
+    if session_id:
+        cmd += ["--session", session_id]
+    if model:
+        cmd += ["--model", model]
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            input=prompt,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=OPENCODE_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return {"error": f"OpenCode superó el límite de {OPENCODE_TIMEOUT} s."}
+    except OSError as exc:
+        return {"error": f"No se pudo ejecutar OpenCode: {exc}"}
+
+    response, new_session, error = _parse_opencode(result.stdout)
+    if response:
+        if len(response) > OPENCODE_MAX_OUTPUT:
+            response = response[:OPENCODE_MAX_OUTPUT] + "\n…"
+        return {"response": response, "session_id": new_session}
+    detail = error or result.stderr.strip()
+    return {
+        "error": (detail or f"OpenCode no devolvió texto (código {result.returncode}).")[
+            :OPENCODE_MAX_OUTPUT
+        ]
+    }
+
+
 REMINDER_TOOLS = [
     list_reminders,
     get_reminder,
@@ -182,4 +274,5 @@ REMINDER_TOOLS = [
     update_reminder,
     delete_reminder,
     web_search,
+    ask_opencode,
 ]

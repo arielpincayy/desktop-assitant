@@ -107,6 +107,18 @@ curl http://localhost:8001/health
 es el chat con ULU que abre el botón «Hablar con ULU» del formulario de la ventana
 de recordatorios. ULU usa libremente las tools de `agent/tools.py`.
 
+### OpenCode desde ULU
+
+La tool `ask_opencode` delega una tarea al CLI de OpenCode (`opencode run`) y
+devuelve su respuesta final. Sin `session_id` empieza una sesión nueva; con el
+`session_id` devuelto continúa la misma conversación. Trabaja sobre este repo o el
+`directory` indicado y usa `--auto`, así que puede editar archivos y ejecutar
+comandos sin confirmación. El modelo es el configurado en OpenCode; se puede forzar
+por llamada con `model` (`provider/model`). Timeout: 300 s.
+
+Requiere el CLI `opencode` en el `PATH` o `OPENCODE_BIN` con la ruta al ejecutable
+(útil al abrir ULU desde el lanzador de escritorio).
+
 Python puede consultar o administrar recordatorios por HTTP:
 
 ```python
