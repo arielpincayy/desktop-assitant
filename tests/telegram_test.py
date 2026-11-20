@@ -3,7 +3,7 @@
 import asyncio
 import os
 import sys
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -13,7 +13,12 @@ import telegram_bot
 def update(text="hola", user=1, chat=1):
     return {
         "update_id": 1,
-        "message": {"from": {"id": user}, "chat": {"id": chat}, "text": text},
+        "message": {
+            "message_id": 10,
+            "from": {"id": user},
+            "chat": {"id": chat},
+            "text": text,
+        },
     }
 
 
@@ -38,40 +43,125 @@ def send(text):
     return True
 
 
-# Sin allowlist: responde el id y no toca al agente.
 calls = []
+
+
+def record(method, *args, **kwargs):
+    calls.append((method, kwargs))
+    return {"ok": True}
+
+
+def reset(unlocked=False):
+    asked.clear()
+    sent.clear()
+    calls.clear()
+    telegram_bot.unlocked = unlocked
+
+
+# Sin allowlist: responde el id y no toca al agente.
+reset()
 with patch.object(telegram_bot, "ALLOWED", ""), patch.object(
-    telegram_bot, "_call", lambda method, *a, **k: calls.append((method, k))
+    telegram_bot, "_call", record
 ), patch.object(telegram_bot, "send_telegram", send):
     asyncio.run(telegram_bot.handle(update(), ask))
 assert asked == [] and sent == []
 assert calls[0][0] == "sendMessage" and calls[0][1]["chat_id"] == 1
 assert "Tu id de Telegram es 1" in calls[0][1]["text"]
 
-# Usuario no autorizado: silencio total.
-calls.clear()
+# Usuario no autorizado: ni siquiera se le pide la clave.
+reset()
 with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
-    telegram_bot, "_call", lambda method, *a, **k: calls.append(method)
-), patch.object(telegram_bot, "send_telegram", send):
-    asyncio.run(telegram_bot.handle(update(user=2, chat=2), ask))
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(text="/clave secreta", user=2, chat=2), ask))
 assert asked == [] and sent == [] and calls == []
 
-# Autorizado: avisa que escribe y responde.
-with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
-    telegram_bot, "_call", lambda method, *a, **k: calls.append(method)
-), patch.object(telegram_bot, "send_telegram", send):
-    asyncio.run(telegram_bot.handle(update(), ask))
-assert asked == ["hola"] and sent == ["respuesta"]
-assert calls[-1] == "sendChatAction"
+# DB caída: no se puede verificar la clave y el chat sigue bloqueado.
+def boom_db(_c):
+    raise RuntimeError("db")
 
-# /start no llama al agente.
+
+reset()
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", boom_db
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(text="/clave x"), ask))
+assert asked == [] and "No pude verificar" in sent[0] and telegram_bot.unlocked is False
+
+# Bloqueado: pide la clave y no llama al agente.
+reset()
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(), ask))
+assert asked == [] and "clave" in sent[0]
+
+# Clave incorrecta: borra el mensaje, avisa y no llama al agente.
+reset()
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+), patch.object(telegram_bot.asyncio, "sleep", AsyncMock()):
+    asyncio.run(telegram_bot.handle(update(text="/clave nope"), ask))
+assert asked == [] and sent == ["Contraseña incorrecta."]
+assert telegram_bot.unlocked is False
+assert calls[0][0] == "deleteMessage" and calls[0][1]["message_id"] == 10
+
+# Clave correcta: desbloquea; el mensaje de la clave no llega al agente.
+reset()
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(text="/clave secreta"), ask))
+assert asked == [] and sent == ["Acceso concedido."]
+assert telegram_bot.unlocked is True
+assert calls[0][0] == "deleteMessage"
+
+# Ya desbloqueado: un mensaje normal llega al agente.
 asked.clear()
 sent.clear()
 with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
     telegram_bot, "send_telegram", send
 ):
+    asyncio.run(telegram_bot.handle(update(), ask))
+assert asked == ["hola"] and sent == ["respuesta"]
+
+# /clave repetido no se reenvía al agente; /start muestra la ayuda.
+asked.clear()
+sent.clear()
+telegram_bot.unlocked = True
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(text="/clave secreta"), ask))
     asyncio.run(telegram_bot.handle(update(text="/start"), ask))
-assert asked == [] and sent == [telegram_bot.HELP]
+assert asked == [] and sent == ["Ya tienes acceso.", telegram_bot.HELP]
+
+# /salir vuelve a bloquear.
+asked.clear()
+sent.clear()
+telegram_bot.unlocked = True
+with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
+    asyncio.run(telegram_bot.handle(update(text="/salir"), ask))
+assert asked == [] and sent == ["Sesión bloqueada."]
+assert telegram_bot.unlocked is False
 
 # Sin configuración no envía; un fallo de red no propaga excepciones.
 with patch.object(telegram_bot, "TOKEN", ""):
@@ -81,15 +171,18 @@ with patch.object(
 ):
     assert telegram_bot._call("sendMessage", chat_id=1, text="x") is None
 
+
 # Un error del agente se responde sin tumbar el bot.
 async def boom(_text):
     raise RuntimeError("boom")
 
 
-sent.clear()
+reset(unlocked=True)
 with patch.object(telegram_bot, "ALLOWED", "1"), patch.object(
-    telegram_bot, "_call", lambda *a, **k: None
-), patch.object(telegram_bot, "send_telegram", send):
+    telegram_bot, "check_password", lambda c: c == "secreta"
+), patch.object(telegram_bot, "_call", record), patch.object(
+    telegram_bot, "send_telegram", send
+):
     asyncio.run(telegram_bot.handle(update(), boom))
 assert sent and "RuntimeError" in sent[0]
 

@@ -22,6 +22,8 @@
     </div>
     <button type="button" id="ulu-open" class="ulu">👻 Hablar con ULU</button>
 
+    <button type="button" id="pw-open" class="ulu">🔑 Clave de Telegram</button>
+
     <div id="list" class="list"></div>
 
     <div id="toast" class="toast" role="status" hidden>
@@ -91,7 +93,20 @@
       </form>
     </dialog>
 
-    <dialog id="chat" aria-label="Chat con ULU">
+    <dialog id="pw">
+      <form id="pw-form" method="dialog">
+        <h2>Clave de Telegram</h2>
+        <label>Nueva clave
+          <input id="pw-input" type="password" required autocomplete="new-password">
+        </label>
+        <div class="actions">
+          <button type="button" id="pw-cancel" class="ghost">Cancelar</button>
+          <button type="submit" class="primary">Guardar clave</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="chat"aria-label="Chat con ULU">
       <div class="chat-head">
         <img src="../fantasmita.svg" alt="" width="24" height="28">
         <h2>ULU</h2>

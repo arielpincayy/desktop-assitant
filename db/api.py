@@ -7,6 +7,7 @@ from . import crontab
 from .database import engine
 from .models import reminders
 from .routes import router
+from . import ulu
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -24,6 +25,7 @@ async def lifespan(_app: FastAPI):
             r"UPDATE reminders SET schedule = regexp_replace(trim(schedule), '^\S+\s+', '') "
             r"WHERE array_length(regexp_split_to_array(trim(schedule), '\s+'), 1) = 6"
         ))
+        ulu.ensure_default(connection)  # clave de Telegram por defecto: "ulu"
         crontab.sync(connection)  # recordatorios ya existentes
     yield
 
@@ -32,6 +34,7 @@ app = FastAPI(title="Reminders API", lifespan=lifespan)
 
 
 app.include_router(router)
+app.include_router(ulu.router)
 
 @app.get("/health")
 def health() -> dict[str, str]:

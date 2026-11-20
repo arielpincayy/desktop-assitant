@@ -150,6 +150,15 @@ $("list").onclick = (e) => {
   }
 };
 
+// Clave de Telegram: se guarda hasheada con sal en la tabla `ulu` (PUT /ulu/telegram-password).
+$("pw-open").onclick = () => { $("pw-input").value = ""; $("pw").show(); $("pw-input").focus(); };
+$("pw-cancel").onclick = () => $("pw").close();
+$("pw").onkeydown = (e) => { if (e.key === "Escape") $("pw").close(); };
+$("pw-form").onsubmit = () => {
+  api("PUT", "/ulu/telegram-password", { password: $("pw-input").value })
+    .then(() => toast("Clave actualizada", false)).catch(() => {});
+};
+
 // Chat con ULU: POST /chat; después se recarga la lista por si ULU cambió algo.
 $("ulu-open").onclick = () => {
   $("chat").show();

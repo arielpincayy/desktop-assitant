@@ -145,9 +145,10 @@ Chat con ULU desde el móvil sin abrir puertos: el bot usa long polling. Tambié
 reenvía a tu chat los recordatorios que anuncia la mascota.
 
 1. Habla con @BotFather en Telegram, crea un bot con `/newbot` y copia el token.
-2. Define en `.env` `TELEGRAM_BOT_TOKEN` y `TELEGRAM_ALLOWED_USER_ID`. Para obtener
-   tu id, deja el id vacío, arranca el bot y mándale cualquier mensaje: responderá
-   con tu id. Luego ponlo y reinicia el bot.
+2. Define en `.env` `TELEGRAM_BOT_TOKEN` y `TELEGRAM_ALLOWED_USER_ID`, y protege
+   el archivo con `chmod 600 .env` (contiene el token). Para obtener tu id, deja
+   el id vacío, arranca el bot y mándale cualquier mensaje: responderá con tu id.
+   Luego ponlo y reinicia el bot.
 3. Arráncalo (si ejecutaste `./instalar-ulu.sh`, arranca solo al iniciar sesión):
 
    ```sh
@@ -156,10 +157,16 @@ reenvía a tu chat los recordatorios que anuncia la mascota.
 
    El log está en `~/.local/state/ulu/telegram.log`.
 
-El bot ignora los mensajes de cualquier otro usuario y usa su propia sesión en
-memoria (se pierde al reiniciarlo). Al arrancar, `./ulu-telegram.sh` asegura
-Postgres y `main.py` con `./ulu-api.sh`, así que las tools funcionan sin abrir la
-ventana. Un error 409 en el log significa que hay otra instancia o un webhook.
+El bot ignora los mensajes de cualquier otro usuario. Tras cada arranque queda
+bloqueado: envía `/clave <contraseña>` para usarlo; el mensaje se borra del chat.
+La sesión sigue abierta hasta `/salir` o hasta reiniciar el bot. La clave vive en
+Postgres (tabla `ulu`, scrypt con sal) y por defecto es `ulu`: cámbiala desde la
+ventana de recordatorios con el botón 🔑 *Clave de Telegram*. Usa una clave única:
+viaja por Telegram y puede verse en una notificación antes de que el bot la borre.
+
+Al arrancar, `./ulu-telegram.sh` asegura Postgres y `main.py` con `./ulu-api.sh`,
+así que las tools funcionan sin abrir la ventana. Un error 409 en el log significa
+que hay otra instancia o un webhook.
 
 Con el bot configurado, los recordatorios se envían también a tu chat; pulsa
 `/start` al menos una vez para que Telegram permita escribirte. No lo compartas:

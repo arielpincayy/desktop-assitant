@@ -2,8 +2,9 @@
 
 Uso: ./ulu-telegram.sh
 
-Solo responde a TELEGRAM_ALLOWED_USER_ID: sus herramientas incluyen recordatorios
-con shell y ask_opencode --auto, que ejecutan código en esta PC.
+Solo responde a TELEGRAM_ALLOWED_USER_ID y pide /clave tras cada arranque: sus
+herramientas incluyen recordatorios con shell y ask_opencode --auto, que ejecutan
+código en esta PC.
 """
 
 import asyncio
@@ -24,8 +25,9 @@ POLL_TIMEOUT = 25
 MAX_LENGTH = 4000
 HELP = (
     "Soy ULU, tu asistente. Pídeme crear, consultar, editar o borrar recordatorios, "
-    "buscar en la web o delegar una tarea de código."
+    "buscar en la web o delegar una tarea de código. Envía /salir para bloquear el chat."
 )
+unlocked = False
 
 
 def _call(method: str, http_timeout: float = 5, **params):
@@ -40,6 +42,13 @@ def _call(method: str, http_timeout: float = 5, **params):
         print(f"Telegram: {method}: {body.get('description', 'error')}", file=sys.stderr)
         return None
     return body.get("result")
+
+
+def check_password(candidate: str) -> bool:
+    """Verifica la clave contra la tabla `ulu` (hash con sal). Import perezoso: db/config.py exige el .env."""
+    from db.ulu import check_telegram_password
+
+    return check_telegram_password(candidate)
 
 
 def chunk(text: str, limit: int = MAX_LENGTH) -> list[str]:
@@ -67,6 +76,7 @@ def send_telegram(text: str) -> bool:
 
 
 async def handle(update: dict, ask) -> None:
+    global unlocked
     message = update.get("message") or {}
     sender = (message.get("from") or {}).get("id")
     chat_id = (message.get("chat") or {}).get("id")
@@ -83,6 +93,35 @@ async def handle(update: dict, ask) -> None:
         return
     text = (message.get("text") or "").strip()
     if not text:
+        return
+    if text == "/clave" or text.startswith("/clave "):
+        if message.get("message_id"):
+            _call("deleteMessage", chat_id=chat_id, message_id=message["message_id"])
+        candidate = text.partition(" ")[2].strip()
+        if unlocked:
+            send_telegram("Ya tienes acceso.")
+        elif not candidate:
+            send_telegram("Uso: /clave <contraseña>.")
+        else:
+            try:
+                ok = await asyncio.to_thread(check_password, candidate)
+            except Exception as exc:
+                print(f"Telegram: clave: {type(exc).__name__}", file=sys.stderr)
+                send_telegram("No pude verificar la clave (¿Postgres está arriba?).")
+                return
+            if ok:
+                unlocked = True
+                send_telegram("Acceso concedido.")
+            else:
+                await asyncio.sleep(2)
+                send_telegram("Contraseña incorrecta.")
+        return
+    if not unlocked:
+        send_telegram("Envía /clave <contraseña> para usar ULU.")
+        return
+    if text == "/salir":
+        unlocked = False
+        send_telegram("Sesión bloqueada.")
         return
     if text == "/start":
         send_telegram(HELP)
