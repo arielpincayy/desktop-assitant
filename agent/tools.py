@@ -14,8 +14,8 @@ import CONFIG
 
 API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001").rstrip("/")
 TIMEOUT_SECONDS = 5
-OPENCODE_TIMEOUT = 300
-OPENCODE_MAX_OUTPUT = 8000
+DELEGATE_TIMEOUT = 300
+DELEGATE_MAX_OUTPUT = 8000
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -247,22 +247,214 @@ def ask_opencode(
             capture_output=True,
             text=True,
             errors="replace",
-            timeout=OPENCODE_TIMEOUT,
+            timeout=DELEGATE_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
-        return {"error": f"OpenCode superó el límite de {OPENCODE_TIMEOUT} s."}
+        return {"error": f"OpenCode superó el límite de {DELEGATE_TIMEOUT} s."}
     except OSError as exc:
         return {"error": f"No se pudo ejecutar OpenCode: {exc}"}
 
     response, new_session, error = _parse_opencode(result.stdout)
     if response:
-        if len(response) > OPENCODE_MAX_OUTPUT:
-            response = response[:OPENCODE_MAX_OUTPUT] + "\n…"
+        if len(response) > DELEGATE_MAX_OUTPUT:
+            response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
         return {"response": response, "session_id": new_session}
     detail = error or result.stderr.strip()
     return {
         "error": (detail or f"OpenCode no devolvió texto (código {result.returncode}).")[
-            :OPENCODE_MAX_OUTPUT
+            :DELEGATE_MAX_OUTPUT
+        ]
+    }
+
+
+def _codex_bin() -> str | None:
+    fallbacks = (
+        Path.home() / ".local/bin/codex",
+        Path.home() / ".codex/packages/standalone/current/bin/codex",
+    )
+    return (
+        os.getenv("CODEX_BIN")
+        or shutil.which("codex")
+        or next((str(path) for path in fallbacks if path.is_file()), None)
+    )
+
+
+def _parse_codex(stdout: str) -> tuple[str, str | None, str | None]:
+    texts: list[str] = []
+    session_id = None
+    error = None
+    for line in stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(event, dict):
+            continue
+        kind = event.get("type")
+        if kind == "thread.started":
+            session_id = event.get("thread_id") or session_id
+        elif kind == "item.completed":
+            item = event.get("item") or {}
+            if item.get("type") == "agent_message":
+                text = item.get("text")
+                if text:
+                    texts.append(text)
+            elif item.get("type") == "error":
+                error = item.get("message") or error
+        elif kind == "error":
+            error = event.get("message") or error
+        elif kind == "turn.failed":
+            error = (event.get("error") or {}).get("message") or error
+    return (texts[-1] if texts else ""), session_id, error
+
+
+def ask_codex(
+    prompt: str,
+    directory: str | None = None,
+    session_id: str | None = None,
+    model: str | None = None,
+) -> Any:
+    """Delega una tarea al CLI de Codex (`codex exec`) y devuelve su respuesta final.
+
+    prompt: tarea completa y autónoma; Codex no puede preguntar durante la ejecución.
+    directory: proyecto donde trabajar; por defecto, este repo.
+    session_id: id devuelto por una llamada anterior (`thread_id`) para continuar esa conversación.
+    model: modelo opcional; sin valor Codex usa su modelo configurado.
+    Ejecuta sin sandbox ni confirmaciones: puede editar archivos y lanzar comandos.
+    """
+    if not prompt.strip():
+        return {"error": "El prompt para Codex está vacío."}
+    binary = _codex_bin()
+    if binary is None:
+        return {"error": "No se encontró el CLI de Codex; instálalo o define CODEX_BIN."}
+    cwd = Path(directory).expanduser() if directory else ROOT
+    if not cwd.is_dir():
+        return {"error": f"El directorio no existe: {cwd}"}
+    cmd = [binary, "exec"]
+    if session_id:
+        cmd.append("resume")
+    cmd += [
+        "--json",
+        "--skip-git-repo-check",
+        "--dangerously-bypass-approvals-and-sandbox",
+    ]
+    if model:
+        cmd += ["--model", model]
+    if session_id:
+        cmd.append(session_id)
+    cmd.append("-")
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            input=prompt,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=DELEGATE_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return {"error": f"Codex superó el límite de {DELEGATE_TIMEOUT} s."}
+    except OSError as exc:
+        return {"error": f"No se pudo ejecutar Codex: {exc}"}
+
+    response, new_session, error = _parse_codex(result.stdout)
+    if response:
+        if len(response) > DELEGATE_MAX_OUTPUT:
+            response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
+        return {"response": response, "session_id": new_session or session_id}
+    detail = error or result.stderr.strip()
+    return {
+        "error": (detail or f"Codex no devolvió texto (código {result.returncode}).")[
+            :DELEGATE_MAX_OUTPUT
+        ]
+    }
+
+
+def _claude_bin() -> str | None:
+    fallbacks = (
+        Path.home() / ".local/bin/claude",
+        Path.home() / ".claude/local/claude",
+    )
+    return (
+        os.getenv("CLAUDE_BIN")
+        or shutil.which("claude")
+        or next((str(path) for path in fallbacks if path.is_file()), None)
+    )
+
+
+def _parse_claude(stdout: str) -> tuple[str, str | None, str | None]:
+    try:
+        data = json.loads(stdout)
+    except ValueError:
+        return "", None, None
+    if not isinstance(data, dict):
+        return "", None, None
+    text = data.get("result") if isinstance(data.get("result"), str) else ""
+    session_id = data.get("session_id")
+    if not isinstance(session_id, str):
+        session_id = None
+    error = None
+    if data.get("is_error"):
+        error = text or str(
+            data.get("error") or data.get("subtype") or "Claude devolvió un error."
+        )
+    return text, session_id, error
+
+
+def ask_claude(
+    prompt: str,
+    directory: str | None = None,
+    session_id: str | None = None,
+    model: str | None = None,
+) -> Any:
+    """Delega una tarea al CLI de Claude Code (`claude -p`) y devuelve su respuesta final.
+
+    prompt: tarea completa y autónoma; Claude no puede preguntar durante la ejecución.
+    directory: proyecto donde trabajar; por defecto, este repo.
+    session_id: id devuelto por una llamada anterior para continuar esa conversación.
+    model: modelo opcional; sin valor Claude usa su modelo configurado.
+    Ejecuta sin confirmaciones: puede editar archivos y lanzar comandos.
+    """
+    if not prompt.strip():
+        return {"error": "El prompt para Claude está vacío."}
+    binary = _claude_bin()
+    if binary is None:
+        return {"error": "No se encontró el CLI de Claude; instálalo o define CLAUDE_BIN."}
+    cwd = Path(directory).expanduser() if directory else ROOT
+    if not cwd.is_dir():
+        return {"error": f"El directorio no existe: {cwd}"}
+    cmd = [binary, "-p", "--output-format", "json", "--dangerously-skip-permissions"]
+    if model:
+        cmd += ["--model", model]
+    if session_id:
+        cmd += ["--resume", session_id]
+    cmd += ["--", prompt]
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=DELEGATE_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return {"error": f"Claude superó el límite de {DELEGATE_TIMEOUT} s."}
+    except OSError as exc:
+        return {"error": f"No se pudo ejecutar Claude: {exc}"}
+
+    response, new_session, error = _parse_claude(result.stdout)
+    if error:
+        return {"error": error[:DELEGATE_MAX_OUTPUT]}
+    if response:
+        if len(response) > DELEGATE_MAX_OUTPUT:
+            response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
+        return {"response": response, "session_id": new_session or session_id}
+    detail = result.stderr.strip()
+    return {
+        "error": (detail or f"Claude no devolvió texto (código {result.returncode}).")[
+            :DELEGATE_MAX_OUTPUT
         ]
     }
 
@@ -275,4 +467,6 @@ REMINDER_TOOLS = [
     delete_reminder,
     web_search,
     ask_opencode,
+    ask_codex,
+    ask_claude,
 ]

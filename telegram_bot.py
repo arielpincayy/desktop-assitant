@@ -3,8 +3,8 @@
 Uso: ./ulu-telegram.sh
 
 Solo responde a TELEGRAM_ALLOWED_USER_ID y pide /clave tras cada arranque: sus
-herramientas incluyen recordatorios con shell y ask_opencode --auto, que ejecutan
-código en esta PC.
+herramientas incluyen recordatorios con shell, ask_opencode --auto, ask_codex sin
+sandbox y ask_claude sin confirmaciones, que ejecutan código en esta PC.
 """
 
 import asyncio

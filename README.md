@@ -30,6 +30,12 @@ listar, crear, editar, completar y borrar recordatorios. Requiere la API en marc
 ./mostrar-recordatorios.sh
 ```
 
+## Reiniciar tras cambios
+
+`./reiniciar-ulu.sh` detiene la API/agente y el bot, reinicia Postgres y SearXNG
+sin borrar el volumen, y vuelve a levantar todo. Cierra y reabre la ventana de
+recordatorios para cargar cambios de UI.
+
 ## Cronjobs
 
 Cada recordatorio `pending` se instala en el `crontab` del usuario (líneas con el
@@ -119,6 +125,31 @@ por llamada con `model` (`provider/model`). Timeout: 300 s.
 Requiere el CLI `opencode` en el `PATH` o `OPENCODE_BIN` con la ruta al ejecutable
 (útil al abrir ULU desde el lanzador de escritorio).
 
+### Codex desde ULU
+
+La tool `ask_codex` delega una tarea al CLI de Codex (`codex exec`) y devuelve su
+respuesta final. Sin `session_id` empieza una sesión nueva; con el `session_id`
+devuelto (el `thread_id` de Codex) continúa la misma conversación
+(`codex exec resume`). Trabaja sobre este repo o el `directory` indicado y usa
+`--dangerously-bypass-approvals-and-sandbox`, así que puede editar archivos y
+ejecutar comandos sin confirmación. El modelo es el configurado en Codex; se puede
+forzar por llamada con `model`. Timeout: 300 s.
+
+Requiere el CLI `codex` en el `PATH` o `CODEX_BIN` con la ruta al ejecutable
+(útil al abrir ULU desde el lanzador de escritorio).
+
+### Claude desde ULU
+
+La tool `ask_claude` delega una tarea al CLI de Claude Code (`claude -p`) y
+devuelve su respuesta final. Sin `session_id` empieza una sesión nueva; con el
+`session_id` devuelto continúa la misma conversación (`--resume`). Trabaja sobre
+este repo o el `directory` indicado y usa `--dangerously-skip-permissions`, así que
+puede editar archivos y ejecutar comandos sin confirmación. El modelo es el
+configurado en Claude Code; se puede forzar por llamada con `model`. Timeout: 300 s.
+
+Requiere el CLI `claude` en el `PATH` o `CLAUDE_BIN` con la ruta al ejecutable
+(útil al abrir ULU desde el lanzador de escritorio).
+
 Python puede consultar o administrar recordatorios por HTTP:
 
 ```python
@@ -170,8 +201,9 @@ que hay otra instancia o un webhook.
 
 Con el bot configurado, los recordatorios se envían también a tu chat; pulsa
 `/start` al menos una vez para que Telegram permita escribirte. No lo compartas:
-tiene las mismas herramientas que ULU, incluidas `ask_opencode` (`--auto`) y los
-recordatorios con `action=command`, que ejecutan código en tu PC con tus permisos.
+tiene las mismas herramientas que ULU, incluidas `ask_opencode` (`--auto`),
+`ask_codex` (sin sandbox), `ask_claude` (sin confirmaciones) y los recordatorios
+con `action=command`, que ejecutan código en tu PC con tus permisos.
 
 ## Requisitos
 
