@@ -51,6 +51,10 @@ with patch.object(tools, "_claude_bin", return_value="/usr/bin/claude"), patch.o
         "--output-format",
         "json",
         "--dangerously-skip-permissions",
+        "--model",
+        "sonnet",
+        "--resume",
+        "abc",
         "--",
         "haz algo",
     ], run.call_args.args[0]

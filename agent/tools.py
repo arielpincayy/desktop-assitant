@@ -17,6 +17,7 @@ TIMEOUT_SECONDS = 5
 DELEGATE_TIMEOUT = 300
 DELEGATE_MAX_OUTPUT = 8000
 ROOT = Path(__file__).resolve().parent.parent
+_STATE: dict[tuple[str, str], dict[str, str]] = {}
 
 
 def _request(method: str, path: str, **kwargs: Any) -> Any:
@@ -191,6 +192,156 @@ def _opencode_bin() -> str | None:
     )
 
 
+def _state_key(provider: str, directory: str | None) -> tuple[str, str]:
+    return provider, str(Path(directory).expanduser().resolve() if directory else ROOT)
+
+
+def _state(provider: str, directory: str | None) -> dict[str, str]:
+    return _STATE.setdefault(_state_key(provider, directory), {})
+
+
+def _remember(
+    provider: str, directory: str | None, session_id: str | None, model: str | None
+) -> None:
+    state = _state(provider, directory)
+    if session_id:
+        state["session_id"] = session_id
+    if model:
+        state["model"] = model
+
+
+def reset_agent_session(provider: str, directory: str | None = None) -> Any:
+    """Empieza una conversación nueva con OpenCode, Codex o Claude.
+
+    provider: "opencode", "codex" o "claude". Conserva el modelo elegido.
+    """
+    provider = provider.strip().lower()
+    if provider not in ("opencode", "codex", "claude"):
+        return {"error": "Proveedor inválido; usa opencode, codex o claude."}
+    state = _state(provider, directory)
+    state.pop("session_id", None)
+    return {"success": True, "provider": provider, "model": state.get("model")}
+
+
+def _run_listing(cmd: list[str], directory: str | None = None) -> tuple[str | None, str | None]:
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=Path(directory).expanduser() if directory else ROOT,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=TIMEOUT_SECONDS,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return None, str(exc)
+    if result.returncode:
+        return None, result.stderr.strip() or f"código {result.returncode}"
+    return result.stdout, None
+
+
+def _claude_sessions(directory: Path, limit: int) -> list[dict[str, Any]]:
+    sessions = []
+    base = Path.home() / ".claude" / "projects"
+    for path in base.glob("*/[0-9a-f-]*.jsonl"):
+        try:
+            text = path.read_text(errors="replace")
+        except OSError:
+            continue
+        if f'"cwd":"{directory}"' not in text and f'"cwd": "{directory}"' not in text:
+            continue
+        session_id = path.stem
+        title = None
+        for line in text.splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get("type") == "ai-title":
+                title = event.get("aiTitle") or title
+            session_id = event.get("sessionId") or session_id
+        sessions.append(
+            {"id": session_id, "title": title or "Sesión de Claude", "updated": path.stat().st_mtime}
+        )
+    return sorted(sessions, key=lambda item: item["updated"], reverse=True)[:limit]
+
+
+def list_sessions(
+    provider: str, directory: str | None = None, limit: int = 10
+) -> Any:
+    """Lista sesiones disponibles para elegir una y continuarla."""
+    provider = provider.strip().lower()
+    limit = max(1, min(limit, 50))
+    cwd = Path(directory).expanduser().resolve() if directory else ROOT
+    if provider == "opencode":
+        output, error = _run_listing(
+            [_opencode_bin() or "opencode", "session", "list", "--format", "json", "-n", str(limit)],
+            str(cwd),
+        )
+        if error:
+            return {"error": f"No se pudieron listar sesiones de OpenCode: {error}"}
+        try:
+            data = json.loads(output or "[]")
+            return [
+                {"id": item["id"], "title": item.get("title", ""), "updated": item.get("updated")}
+                for item in data
+            ]
+        except (ValueError, TypeError, KeyError):
+            return {"error": "OpenCode devolvió una lista de sesiones no válida."}
+    if provider == "codex":
+        path = Path.home() / ".codex" / "session_index.jsonl"
+        sessions = []
+        try:
+            for line in path.read_text(errors="replace").splitlines():
+                try:
+                    item = json.loads(line)
+                except ValueError:
+                    continue
+                sessions.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("thread_name") or "Sesión de Codex",
+                        "updated": item.get("updated_at"),
+                    }
+                )
+        except OSError as exc:
+            return {"error": f"No se pudieron listar sesiones de Codex: {exc}"}
+        sessions = [item for item in sessions if item["id"]]
+        return sorted(sessions, key=lambda item: item["updated"] or "", reverse=True)[:limit]
+    if provider == "claude":
+        return _claude_sessions(cwd, limit)
+    return {"error": "Proveedor inválido; usa opencode, codex o claude."}
+
+
+def list_models(provider: str, query: str | None = None) -> Any:
+    """Lista modelos disponibles; `query` filtra por id o nombre."""
+    provider = provider.strip().lower()
+    if provider == "opencode":
+        output, error = _run_listing([_opencode_bin() or "opencode", "models"])
+        models = output.splitlines() if output else []
+    elif provider == "codex":
+        output, error = _run_listing([_codex_bin() or "codex", "debug", "models"])
+        try:
+            models = [
+                f"{item.get('slug')} — {item.get('display_name', item.get('slug'))}"
+                for item in json.loads(output or "{}").get("models", [])
+                if item.get("visibility") == "list"
+            ]
+        except (ValueError, AttributeError):
+            models = []
+    elif provider == "claude":
+        models = ["sonnet", "opus", "haiku", "fable"]
+        error = None
+    else:
+        return {"error": "Proveedor inválido; usa opencode, codex o claude."}
+    if error:
+        return {"error": f"No se pudieron listar modelos de {provider}: {error}"}
+    if query:
+        needle = query.lower()
+        models = [model for model in models if needle in model.lower()]
+    return models[:50]
+
+
 def _parse_opencode(stdout: str) -> tuple[str, str | None, str | None]:
     texts: list[str] = []
     session_id = None
@@ -226,6 +377,9 @@ def ask_opencode(
     model: "provider/model" opcional; sin valor OpenCode usa su modelo configurado.
     Ejecuta con --auto (sin confirmar permisos): puede editar archivos y lanzar comandos.
     """
+    state = _state("opencode", directory)
+    session_id = session_id or state.get("session_id")
+    model = model or state.get("model")
     if not prompt.strip():
         return {"error": "El prompt para OpenCode está vacío."}
     binary = _opencode_bin()
@@ -258,7 +412,8 @@ def ask_opencode(
     if response:
         if len(response) > DELEGATE_MAX_OUTPUT:
             response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
-        return {"response": response, "session_id": new_session}
+        _remember("opencode", directory, new_session or session_id, model)
+        return {"response": response, "session_id": new_session or session_id}
     detail = error or result.stderr.strip()
     return {
         "error": (detail or f"OpenCode no devolvió texto (código {result.returncode}).")[
@@ -322,6 +477,9 @@ def ask_codex(
     model: modelo opcional; sin valor Codex usa su modelo configurado.
     Ejecuta sin sandbox ni confirmaciones: puede editar archivos y lanzar comandos.
     """
+    state = _state("codex", directory)
+    session_id = session_id or state.get("session_id")
+    model = model or state.get("model")
     if not prompt.strip():
         return {"error": "El prompt para Codex está vacío."}
     binary = _codex_bin()
@@ -362,6 +520,7 @@ def ask_codex(
     if response:
         if len(response) > DELEGATE_MAX_OUTPUT:
             response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
+        _remember("codex", directory, new_session or session_id, model)
         return {"response": response, "session_id": new_session or session_id}
     detail = error or result.stderr.strip()
     return {
@@ -416,6 +575,9 @@ def ask_claude(
     model: modelo opcional; sin valor Claude usa su modelo configurado.
     Ejecuta sin confirmaciones: puede editar archivos y lanzar comandos.
     """
+    state = _state("claude", directory)
+    session_id = session_id or state.get("session_id")
+    model = model or state.get("model")
     if not prompt.strip():
         return {"error": "El prompt para Claude está vacío."}
     binary = _claude_bin()
@@ -450,6 +612,7 @@ def ask_claude(
     if response:
         if len(response) > DELEGATE_MAX_OUTPUT:
             response = response[:DELEGATE_MAX_OUTPUT] + "\n…"
+        _remember("claude", directory, new_session or session_id, model)
         return {"response": response, "session_id": new_session or session_id}
     detail = result.stderr.strip()
     return {
@@ -466,6 +629,9 @@ REMINDER_TOOLS = [
     update_reminder,
     delete_reminder,
     web_search,
+    list_sessions,
+    list_models,
+    reset_agent_session,
     ask_opencode,
     ask_codex,
     ask_claude,

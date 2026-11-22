@@ -50,9 +50,13 @@ with patch.object(tools, "_codex_bin", return_value="/usr/bin/codex"), patch.obj
     assert run.call_args.args[0] == [
         "/usr/bin/codex",
         "exec",
+        "resume",
         "--json",
         "--skip-git-repo-check",
         "--dangerously-bypass-approvals-and-sandbox",
+        "--model",
+        "openai/x",
+        "abc",
         "-",
     ], run.call_args.args[0]
 
