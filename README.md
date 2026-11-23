@@ -113,6 +113,30 @@ curl http://localhost:8001/health
 es el chat con ULU que abre el botón «Hablar con ULU» del formulario de la ventana
 de recordatorios. ULU usa libremente las tools de `agent/tools.py`.
 
+### Archivos desde ULU
+
+La instrucción del agente incluye la ruta absoluta del proyecto, y tres tools
+trabajan sobre el disco con los permisos del usuario:
+
+- `list_dir(directory)`: lista archivos y carpetas (tipo y tamaño). Rutas relativas
+  se resuelven contra el proyecto.
+- `read_file(path)`: devuelve el contenido de un archivo de texto (máx. 100 000
+  caracteres).
+- `edit_file(path, old, new, replace_all)`: reemplaza un fragmento exacto de texto y
+  devuelve cuántas veces lo cambió. No crea archivos.
+- `copy_path(src, dst)` y `move_path(src, dst)`: copian o mueven archivos y carpetas;
+  si `dst` es una carpeta, operan dentro de ella.
+- `delete_path(path, confirm)`: borra archivo o carpeta con su contenido; exige
+  `confirm=True`.
+- `compress_path(source, destination)`: comprime en `.zip` o `.tar.gz` según la
+  extensión del destino.
+
+Ninguna sobrescribe un destino existente. `edit_file` y el resto comprueban que el
+archivo o la carpeta sea escribible por tu usuario: si requiere sudo, responden con un
+error y no tocan nada. `delete_path` se niega a borrar el proyecto o una carpeta que lo
+contenga. Como el contenido leído acaba en el prompt del modelo, evita pedirle que abra
+`.env` u otros archivos con secretos.
+
 ### OpenCode desde ULU
 
 La tool `ask_opencode` delega una tarea al CLI de OpenCode (`opencode run`) y

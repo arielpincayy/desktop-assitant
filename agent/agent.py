@@ -9,7 +9,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 import CONFIG
-from agent.tools import REMINDER_TOOLS
+from agent.tools import REMINDER_TOOLS, ROOT
 
 ULU_INSTRUCTION = "Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español."
 
@@ -25,6 +25,12 @@ class Agent:
         return (
             f"{self.instruction} Fecha y hora actual: {now}, zona America/Guayaquil; "
             "úsala para convertir lo que pida el usuario (fechas relativas, repeticiones) a una expresión cron de 5 campos: min hora díaMes mes díaSemana. "
+            f"El código de este proyecto está en {ROOT}; las rutas relativas de list_dir, read_file y edit_file se resuelven contra esa carpeta. "
+            "Usa list_dir para explorar carpetas, read_file para abrir un archivo y edit_file para reemplazar un fragmento exacto de texto; "
+            "edit_file solo puede escribir archivos que el usuario pueda modificar sin sudo y no crea archivos nuevos. "
+            "Usa copy_path, move_path y delete_path para copiar, mover o borrar archivos y carpetas; "
+            "delete_path exige confirm=True y solo se usa cuando el usuario lo pida claramente. "
+            "Usa compress_path para comprimir en .zip o .tar.gz. Ninguna de estas tools sobrescribe archivos existentes. "
             "Usa las herramientas para consultar y gestionar recordatorios. "
             "Si el usuario pide que al dispararse se ejecute un comando, usa action='command' y command con el comando exacto. "
             "Si pide que tú investigues o hagas algo al dispararse, usa action='agent' y pon la instrucción en description. "
