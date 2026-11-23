@@ -28,6 +28,7 @@ class Agent:
             f"El código de este proyecto está en {ROOT}; las rutas relativas de list_dir, read_file y edit_file se resuelven contra esa carpeta. "
             "Usa list_dir para explorar carpetas, read_file para abrir un archivo y edit_file para reemplazar un fragmento exacto de texto; "
             "edit_file solo puede escribir archivos que el usuario pueda modificar sin sudo y no crea archivos nuevos. "
+            "Usa create_file para crear un archivo nuevo de cualquier extensión; no sobrescribe archivos existentes. "
             "Usa copy_path, move_path y delete_path para copiar, mover o borrar archivos y carpetas; "
             "delete_path exige confirm=True y solo se usa cuando el usuario lo pida claramente. "
             "Usa compress_path para comprimir en .zip o .tar.gz. Ninguna de estas tools sobrescribe archivos existentes. "

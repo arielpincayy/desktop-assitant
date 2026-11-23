@@ -282,6 +282,28 @@ def edit_file(path: str, old: str, new: str, replace_all: bool = False) -> Any:
     }
 
 
+def create_file(path: str, content: str = "") -> Any:
+    """Crea un archivo nuevo de cualquier extensión con el contenido indicado.
+
+    path: ruta absoluta o relativa al proyecto; la carpeta contenedora debe existir.
+    No sobrescribe: devuelve un error si el archivo ya existe (para cambiarlo, usa edit_file).
+    """
+    target = _path(path)
+    if target.exists() or target.is_symlink():
+        return {"error": f"Ya existe {target}; no se sobrescribe."}
+    if not target.parent.is_dir():
+        return {"error": f"No existe la carpeta: {target.parent}"}
+    if not os.access(target.parent, os.W_OK):
+        return {
+            "error": f"{target.parent} requiere permisos de administrador (sudo); no se creó."
+        }
+    try:
+        target.write_text(content, encoding="utf-8")
+    except OSError as exc:
+        return {"error": f"No se pudo crear {target}: {exc}"}
+    return {"success": True, "path": str(target), "bytes": len(content.encode())}
+
+
 def copy_path(source: str, destination: str) -> Any:
     """Copia un archivo o una carpeta a otra ubicación de la computadora.
 
@@ -854,6 +876,7 @@ REMINDER_TOOLS = [
     list_dir,
     read_file,
     edit_file,
+    create_file,
     copy_path,
     move_path,
     delete_path,

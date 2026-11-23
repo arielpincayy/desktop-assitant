@@ -38,6 +38,13 @@ with tempfile.TemporaryDirectory() as tmp:
     assert tools.edit_file(str(base / "nota.txt"), "", "x").get("error")
     assert tools.edit_file(str(base / "no-existe.txt"), "a", "b").get("error")
 
+    assert tools.create_file(str(base / "nuevo.json"), '{"a": 1}')["success"]
+    assert (base / "nuevo.json").read_text() == '{"a": 1}'
+    assert tools.create_file(str(base / "vacio.any"))["success"]
+    assert (base / "vacio.any").read_text() == ""
+    assert tools.create_file(str(base / "nuevo.json"), "x").get("error")
+    assert tools.create_file(str(base / "nada" / "x.txt"), "x").get("error")
+
     assert tools.copy_path(str(base / "nota.txt"), str(base / "copia.txt"))["success"]
     assert (base / "copia.txt").read_text() == "hola all\nhola all\n"
     assert tools.copy_path(str(base / "nota.txt"), str(base / "copia.txt")).get("error")

@@ -124,6 +124,8 @@ trabajan sobre el disco con los permisos del usuario:
   caracteres).
 - `edit_file(path, old, new, replace_all)`: reemplaza un fragmento exacto de texto y
   devuelve cuántas veces lo cambió. No crea archivos.
+- `create_file(path, content)`: crea un archivo nuevo de cualquier extensión; la carpeta
+  debe existir y no sobrescribe.
 - `copy_path(src, dst)` y `move_path(src, dst)`: copian o mueven archivos y carpetas;
   si `dst` es una carpeta, operan dentro de ella.
 - `delete_path(path, confirm)`: borra archivo o carpeta con su contenido; exige
