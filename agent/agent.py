@@ -11,8 +11,6 @@ from google.genai import types
 import CONFIG
 from agent.tools import REMINDER_TOOLS, ROOT
 
-ULU_INSTRUCTION = "Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español."
-
 class Agent:
     def __init__(self, name: str, instruction: str):
         self.name = name

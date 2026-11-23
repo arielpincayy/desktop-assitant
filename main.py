@@ -12,10 +12,11 @@ load_dotenv(".env")  # antes de importar db: db/config.py lee POSTGRES_PASSWORD 
 import uvicorn
 from pydantic import BaseModel, Field
 
-from agent.agent import Agent, ULU_INSTRUCTION
+from agent.agent import Agent
 from db.api import app
 
 API_URL = os.getenv("REMINDERS_API_URL", "http://localhost:8001")
+ULU_INSTRUCTION = "Eres ULU, asistente de recordatorios. Responde de forma clara, breve y en español."
 
 # Las tools hacen requests síncronos contra esta misma API: el agente corre en su
 # propio loop/hilo para no bloquear el loop de uvicorn.
